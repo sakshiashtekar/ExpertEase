@@ -1,34 +1,54 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';   
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
 
-const HomeScreen = ({ navigation }) => {
+const experts = [
+  { id: '1', name: 'sakshi', company: 'ABC Corp', email: 'sakshi@example.com', designation: 'Software Engineer' },
+  { id: '2', name: 'Jash', company: 'XYZ Ltd', email: 'jash@example.com', designation: 'Data Scientist' },
+  { id: '3', name: 'preeti', company: 'Tech Solutions', email: 'preeti@example.com', designation: 'Product Manager' },
+  { id: '4', name: 'aditya', company: 'Technova', email: 'aditya@example.com', designation: 'Java developer' },
+];
+
+const StudentHomeScreen = () => {
+  const renderExpertCard = ({ item, index }) => {
+    const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
+
+    return (
+      <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+        <Image style={styles.avatar} source={require('../../assets/profile_logo.jpg')} />
+        <View>
+          <Text style={styles.cardText}>{item.name}</Text>
+          <Text style={styles.cardText}>{item.company}</Text>
+          <Text style={styles.cardText}>{item.email}</Text>
+          <Text style={styles.cardText}>{item.designation}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-
-      <Text style={styles.title}>Home</Text>
-
-      <View style={styles.profileContainer}>
-        <View style={styles.profileImage}></View>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.menuButton}>
+          <Icon name="bars" size={30} color="#E63946" marginTop={20} />
+        </TouchableOpacity>
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Search experts" 
+          />
+        </View>
       </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.input}>Name of employee</Text>
-          
-        <Text style={styles.input}>Company name of employee</Text>
-
-        <TouchableOpacity style={styles.containerButton} onPress={() => navigation.navigate('EmployeeDetails')}>
-        <Text style={styles.buttonText}>Edit Details</Text>
+      <Text style={styles.title}>Our Experts</Text>
+      <FlatList
+        data={experts}
+        renderItem={renderExpertCard}
+        keyExtractor={(item) => item.id}
+      />
+      <TouchableOpacity style={styles.postButton}>
+        <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AttendanceRecord')}>
-        <Text style={styles.buttonText}>Mark your attendance</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MonthlyAttendance')}>
-        <Text style={styles.buttonText}>View Monthly Attendance</Text>
-      </TouchableOpacity>
-      
     </View>
   );
 };
@@ -36,72 +56,76 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    marginBottom: 16,
+  },
+  menuButton: {
+    marginRight: 8,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    height: 40,
+    borderWidth: 2,
+    borderColor: '#1D3557',
+    borderRadius: 20,
+    marginTop: 20,
+    paddingHorizontal: 15,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 0,
+    paddingHorizontal: -5,
   },
   title: {
     fontSize: 24,
-    fontWeight: '900',
-    marginTop: -50,
-    marginBottom: 50,
-    color: '#22577A',
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#1D3557',
   },
-  profileContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 150,
-    backgroundColor: '#E0F5EB',
-    justifyContent: 'center',
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 20,
+    borderColor: '#1D3557',  
+    borderWidth: 2, 
+  },
+  cardText: {
+    fontSize: 16,
+  },
+  postButton: {
+    backgroundColor: '#1D3557',
+    paddingVertical: 12,
+    borderRadius: 30,
     alignItems: 'center',
     marginBottom: 10,
   },
-  profileImage: {
-    width: 125,
-    height: 125,
-    borderRadius: 125,
-    backgroundColor: '#D9D9D9',
-  },
-  inputContainer: {
-    width: '80%',
-    height: '30%',
-    backgroundColor: '#E0F5EB',
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 25,
-  },
-  input: {
-    height: 45,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 30,
-    marginTop: 10,
+  postButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  button: {
-    backgroundColor: '#22577A',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginTop: 30,
-    width: 320,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '900',
-    textAlign: 'center'
-  },
-  containerButton: {
-    backgroundColor: '#22577A',
-    width: 150,
-    marginLeft: 70,
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginBottom: 10,
-  }
+  
 });
 
-export default HomeScreen;
+export default StudentHomeScreen;

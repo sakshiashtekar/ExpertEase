@@ -1,34 +1,54 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';    
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
 
-const HomeScreen = ({ navigation }) => {
+const doubts = [
+  { id: '1', title: 'What is React Native?', domain: 'Mobile Development', timeslot: '10:00 AM - 11:00 AM', charges: '$20' },
+  { id: '2', title: 'How does Redux work?', domain: 'State Management', timeslot: '11:00 AM - 12:00 PM', charges: '$25' },
+  { id: '3', title: 'What is Blockchain?', domain: 'Blockchain Technology', timeslot: '1:00 PM - 2:00 PM', charges: '$30' },
+  { id: '4', title: 'How to build REST APIs?', domain: 'Backend Development', timeslot: '2:00 PM - 3:00 PM', charges: '$15' },
+];
+
+const StudentHomeScreen = () => {
+  const renderDoubtCard = ({ item, index }) => {
+    // Alternate background colors based on the index
+    const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
+
+    return (
+      <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
+          <Text style={styles.cardText}>Domain: {item.domain}</Text>
+          <Text style={styles.cardText}>Timeslot: {item.timeslot}</Text>
+          <Text style={styles.cardText}>Charges: {item.charges}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-
-      <Text style={styles.title}>Home</Text>
-
-      <View style={styles.profileContainer}>
-        <View style={styles.profileImage}></View>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.menuButton}>
+          <Icon name="bars" size={30} color="#E63946" marginTop={20} />
+        </TouchableOpacity>
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Search doubts" 
+          />
+        </View>
       </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.input}>Name of employee</Text>
-          
-        <Text style={styles.input}>Company name of employee</Text>
-
-        <TouchableOpacity style={styles.containerButton} onPress={() => navigation.navigate('EmployeeDetails')}>
-        <Text style={styles.buttonText}>Edit Details</Text>
+      <Text style={styles.title}>Explore Doubts</Text>
+      <FlatList
+        data={doubts}
+        renderItem={renderDoubtCard}
+        keyExtractor={(item) => item.id}
+      />
+      <TouchableOpacity style={styles.postButton}>
+        <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AttendanceRecord')}>
-        <Text style={styles.buttonText}>Mark your attendance</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MonthlyAttendance')}>
-        <Text style={styles.buttonText}>View Monthly Attendance</Text>
-      </TouchableOpacity>
-      
     </View>
   );
 };
@@ -36,72 +56,72 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    marginBottom: 16,
+  },
+  menuButton: {
+    marginRight: 8,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    height: 40,
+    borderWidth: 2,
+    borderColor: '#1D3557',
+    borderRadius: 20,
+    marginTop: 20,
+    paddingHorizontal: 15,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 0,
+    paddingHorizontal: -5,
   },
   title: {
     fontSize: 24,
-    fontWeight: '900',
-    marginTop: -50,
-    marginBottom: 50,
-    color: '#22577A',
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#1D3557',
   },
-  profileContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 150,
-    backgroundColor: '#E0F5EB',
-    justifyContent: 'center',
+  card: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    marginTop: 10,
+    paddingHorizontal: 15,
+    marginLeft: 10,
+    marginRight:10
+  },
+  cardContent: {
+    paddingVertical: 10,
+  },
+  cardText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  postButton: {
+    backgroundColor: '#1D3557',
+    paddingVertical: 12,
+    borderRadius: 30,
     alignItems: 'center',
     marginBottom: 10,
   },
-  profileImage: {
-    width: 125,
-    height: 125,
-    borderRadius: 125,
-    backgroundColor: '#D9D9D9',
-  },
-  inputContainer: {
-    width: '80%',
-    height: '30%',
-    backgroundColor: '#E0F5EB',
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 25,
-  },
-  input: {
-    height: 45,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 30,
-    marginTop: 10,
+  postButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  button: {
-    backgroundColor: '#22577A',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginTop: 30,
-    width: 320,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '900',
-    textAlign: 'center'
-  },
-  containerButton: {
-    backgroundColor: '#22577A',
-    width: 150,
-    marginLeft: 70,
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginBottom: 10,
-  }
 });
 
-export default HomeScreen;
+export default StudentHomeScreen;
