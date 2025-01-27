@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 
 const SignupScreen = ({ navigation }) => {
   return (
@@ -27,7 +27,11 @@ const SignupScreen = ({ navigation }) => {
       <Text style={styles.signInText3}>or sign up with</Text>
 
       <TouchableOpacity style={styles.googleButton}>
-        <Text style={styles.googleButtonText}>Sign up with Google</Text>
+      <Image 
+          source={require('../../assets/google.png')} 
+          style={styles.googleLogo}
+      />
+      <Text style={styles.googleButtonText}>Sign up with Google</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('ExpertLogin')}>
@@ -62,11 +66,12 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#F1FAEE',
     borderWidth: 1,
     marginBottom: 12,
     paddingLeft: 8,
     borderRadius: 10,
+    backgroundColor: '#F1FAEE'
   },
   button: {
     backgroundColor: '#1D3557',
@@ -88,6 +93,13 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginBottom: 10,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  googleLogo: {
+    width: 24, 
+    height: 24,
+    marginRight: 10, 
   },
   googleButtonText: {
     color: '#1D3557',
@@ -101,17 +113,17 @@ const styles = StyleSheet.create({
     fontWeight:'bold'
   },
   signInText2: {
-    color: 'grey',
+    color: '#457B9D',
     paddingLeft: 100
   },
   signInText3: {
-    color: 'grey',
+    color: '#457B9D',
     fontWeight:'bold',
     paddingStart: 150,
     paddingVertical: 10
   },
   signInText4: {
-    color: 'grey',
+    color: '#457B9D',
     fontWeight:'bold',
     paddingStart: 0,
     textAlign: 'center',
