@@ -22,7 +22,7 @@ const LoginScreen = ({ navigation }) => {
 
       <TouchableOpacity style={styles.googleButton}>
       <Image 
-                source={require('../../assets/google.png')} 
+                source={require('../../assets/google_logo.png')} 
                 style={styles.googleLogo}
               />
         <Text style={styles.googleButtonText}>Login In with Google</Text>

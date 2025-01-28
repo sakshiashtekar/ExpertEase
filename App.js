@@ -9,6 +9,8 @@ import ExpertLoginScreen from './screens/expert/ExpertLoginScreen';
 import StudentLoginScreen from './screens/student/StudentLoginScreen';
 import ExpertHomeScreen from './screens/expert/ExpertHomeScreen';
 import StudentHomeScreen from './screens/student/StudentHomeScreen';
+import PostDoubtScreen from './screens/student/PostDoubtScreen';
+import SpecificDoubtScreen from './screens/expert/SpecificDoubtScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +26,8 @@ function App() {
         <Stack.Screen name="ExpertSignUp" component={ExpertSignupScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="StudentHome" component={StudentHomeScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="ExpertHome" component={ExpertHomeScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="PostDoubt" component={PostDoubtScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="SpecificDoubt" component={SpecificDoubtScreen} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

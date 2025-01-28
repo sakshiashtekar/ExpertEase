@@ -9,7 +9,7 @@ const experts = [
   { id: '4', name: 'aditya', company: 'Technova', email: 'aditya@example.com', designation: 'Java developer' },
 ];
 
-const StudentHomeScreen = () => {
+const StudentHomeScreen = ({ navigation }) => {
   const renderExpertCard = ({ item, index }) => {
     const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
 
@@ -30,7 +30,7 @@ const StudentHomeScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={30} color="#E63946" marginTop={20} />
+          <Icon name="bars" size={38} color="#E63946" marginTop={20} />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
@@ -46,7 +46,8 @@ const StudentHomeScreen = () => {
         renderItem={renderExpertCard}
         keyExtractor={(item) => item.id}
       />
-      <TouchableOpacity style={styles.postButton}>
+      <TouchableOpacity style={styles.postButton}
+      onPress={() => navigation.navigate('PostDoubt')}>
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
     </View>
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: -5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
@@ -101,6 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 20,
     marginTop: 10,
+    elevation: 4, 
   },
   avatar: {
     width: 50,

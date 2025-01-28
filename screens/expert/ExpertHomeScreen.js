@@ -1,6 +1,7 @@
-import React from 'react';    
+import React from 'react';     
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
+import { useNavigation } from '@react-navigation/native';
 
 const doubts = [
   { id: '1', title: 'What is React Native?', domain: 'Mobile Development', timeslot: '10:00 AM - 11:00 AM', charges: '$20' },
@@ -9,20 +10,27 @@ const doubts = [
   { id: '4', title: 'How to build REST APIs?', domain: 'Backend Development', timeslot: '2:00 PM - 3:00 PM', charges: '$15' },
 ];
 
-const StudentHomeScreen = () => {
+const ExpertHomeScreen = () => {
+  const navigation = useNavigation();
+
+  const handleDoubtPress = (doubt) => {
+    navigation.navigate('SpecificDoubt', { doubt });
+  };
+
   const renderDoubtCard = ({ item, index }) => {
-    // Alternate background colors based on the index
     const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
 
     return (
-      <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
-        <View style={styles.cardContent}>
-          <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
-          <Text style={styles.cardText}>Domain: {item.domain}</Text>
-          <Text style={styles.cardText}>Timeslot: {item.timeslot}</Text>
-          <Text style={styles.cardText}>Charges: {item.charges}</Text>
+      <TouchableOpacity onPress={() => handleDoubtPress(item)}>
+        <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
+            <Text style={styles.cardText}>Domain: {item.domain}</Text>
+            <Text style={styles.cardText}>Timeslot: {item.timeslot}</Text>
+            <Text style={styles.cardText}>Charges: {item.charges}</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -30,7 +38,7 @@ const StudentHomeScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={30} color="#E63946" marginTop={20} />
+          <Icon name="bars" size={38} color="#E63946" marginTop={20} />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
@@ -46,9 +54,6 @@ const StudentHomeScreen = () => {
         renderItem={renderDoubtCard}
         keyExtractor={(item) => item.id}
       />
-      <TouchableOpacity style={styles.postButton}>
-        <Text style={styles.postButtonText}>Post Doubt</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -88,7 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: -5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
@@ -101,7 +106,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 15,
     marginLeft: 10,
-    marginRight:10
+    marginRight:10,
+    elevation: 4, 
   },
   cardContent: {
     paddingVertical: 10,
@@ -110,18 +116,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
   },
-  postButton: {
-    backgroundColor: '#1D3557',
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  postButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
 });
 
-export default StudentHomeScreen;
+export default ExpertHomeScreen;

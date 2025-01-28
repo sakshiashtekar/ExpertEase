@@ -40,7 +40,7 @@ const WelcomeScreen = ({ navigation }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Choose an Option</Text>
+            <Text style={styles.modalTitle}>Student or Expert?</Text>
             <RadioButton.Group
               onValueChange={(value) => setSelectedOption(value)}
               value={selectedOption}
