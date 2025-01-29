@@ -1,6 +1,6 @@
-import React from 'react';   
+import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; 
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const experts = [
   { id: '1', name: 'sakshi', company: 'ABC Corp', email: 'sakshi@example.com', designation: 'Software Engineer' },
@@ -15,7 +15,7 @@ const StudentHomeScreen = ({ navigation }) => {
 
     return (
       <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
-        <Image style={styles.avatar} source={require('../../assets/profile_logo.jpg')} />
+        <Image style={styles.avatar} source={require('../../assets/profile_logo.png')} />
         <View>
           <Text style={styles.cardText}>{item.name}</Text>
           <Text style={styles.cardText}>{item.company}</Text>
@@ -29,8 +29,8 @@ const StudentHomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={38} color="#E63946" marginTop={20} />
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
+          <Icon name="bars" size={38} color="#E63946" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
@@ -46,8 +46,7 @@ const StudentHomeScreen = ({ navigation }) => {
         renderItem={renderExpertCard}
         keyExtractor={(item) => item.id}
       />
-      <TouchableOpacity style={styles.postButton}
-      onPress={() => navigation.navigate('PostDoubt')}>
+      <TouchableOpacity style={styles.postButton} onPress={() => navigation.navigate('PostDoubt')}>
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
     </View>
@@ -67,6 +66,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
+    marginTop: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -102,15 +102,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 20,
     marginTop: 10,
-    elevation: 4, 
+    elevation: 4,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
     marginRight: 20,
-    borderColor: '#1D3557',  
-    borderWidth: 2, 
+    borderColor: '#1D3557',
+    borderWidth: 2,
   },
   cardText: {
     fontSize: 16,
@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  
 });
 
 export default StudentHomeScreen;

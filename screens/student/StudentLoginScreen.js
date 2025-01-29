@@ -14,7 +14,7 @@ const LoginScreen = ({ navigation }) => {
       <Text style={styles.label}>Password</Text>
       <TextInput placeholder="**********" style={styles.input} secureTextEntry />
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('StudentHome')}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('StudentDrawer')}>
         <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
 
