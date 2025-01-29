@@ -14,16 +14,16 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
     console.log('Meeting scheduled for:', doubt.title);
     console.log('Charge:', selectedCharge || customCharge);
     console.log('Time:', selectedTime);
-    setIsModalVisible(false); // Close the modal after scheduling
+    setIsModalVisible(false); 
   };
 
   const handleGoBack = () => {
-    navigation.goBack();
-  };
-
+    navigation.navigate('ExpertDrawer', { screen: 'ExpertHome' });
+  };  
+  
   const handleChargeChange = (itemValue) => {
     setSelectedCharge(itemValue);
-    setCustomCharge(''); // Reset custom charge if dropdown selection is made
+    setCustomCharge(''); 
   };
 
   const handleTimeChange = (itemValue) => {

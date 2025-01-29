@@ -1,6 +1,6 @@
-import React from 'react';     
+import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; 
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 
 const doubts = [
@@ -37,15 +37,14 @@ const ExpertHomeScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={38} color="#E63946" marginTop={20} />
+        {/* Hamburger Icon to open the Drawer */}
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
+          <Icon name="bars" size={38} color="#E63946" />
         </TouchableOpacity>
+        {/* Search Bar next to Hamburger */}
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search doubts" 
-          />
+          <TextInput style={styles.searchInput} placeholder="Search doubts" />
         </View>
       </View>
       <Text style={styles.title}>Explore Doubts</Text>
@@ -71,6 +70,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
+    marginTop : 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#1D3557',
     borderRadius: 20,
-    marginTop: 20,
     paddingHorizontal: 15,
+    marginTop : 20,
   },
   searchIcon: {
     marginRight: 10,
@@ -90,7 +90,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderWidth: 0,
-    paddingHorizontal: -5,
   },
   title: {
     fontSize: 25,
@@ -103,11 +102,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 20,
-    marginTop: 10,
-    paddingHorizontal: 15,
-    marginLeft: 10,
-    marginRight:10,
-    elevation: 4, 
+    elevation: 4,
   },
   cardContent: {
     paddingVertical: 10,

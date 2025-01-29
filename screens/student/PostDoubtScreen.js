@@ -45,8 +45,9 @@ const PostDoubtScreen = () => {
   };
 
   const handleGoBack = () => {
-    navigation.goBack();
-  };
+    navigation.navigate('StudentDrawer', { screen: 'StudentHome' });
+  };  
+  
 
   return (
     <View style={styles.container}>
@@ -56,10 +57,8 @@ const PostDoubtScreen = () => {
 
       <Text style={styles.title}>Post Doubt</Text>
 
-      {/* Doubt Title Input */}
       <TextInput style={styles.input} placeholder="Doubt Title" placeholderTextColor="#7E7E7E" />
 
-      {/* Doubt Description Input */}
       <TextInput
         style={[styles.input, styles.descriptionInput]}
         placeholder="Doubt Description"
@@ -67,16 +66,13 @@ const PostDoubtScreen = () => {
         multiline
       />
 
-      {/* Image Picker Section */}
       <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
         <Icon name="image" size={24} color="#457B9D" />
         <Text style={styles.imageText}>Upload Doubt Photo (if any)</Text>
       </TouchableOpacity>
 
-      {/* Display Selected Image */}
       {image && <Image source={{ uri: image }} style={styles.uploadedImage} />}
 
-      {/* Post Doubt Button */}
       <TouchableOpacity style={styles.postButton}>
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
@@ -84,7 +80,6 @@ const PostDoubtScreen = () => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
