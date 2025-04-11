@@ -1,48 +1,135 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { supabase } from '../supabase'; // adjust path if needed
 
 const ExpertProfileScreen = ({ navigation }) => {
   // State to store user details
-  const [profileImage, setProfileImage] = useState(null);
-  const [name, setName] = useState('Sakshi'); // Replace with actual data from signup
-  const [email, setEmail] = useState('sakshi@example.com'); // Replace with actual data from signup
-  const [companyname, setCompany] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [designation, setDesignation] = useState('');
   const [domain, setDomain] = useState('');
   const [skills, setSkills] = useState('');
   const [experience, setExperience] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
+  const [availability, setAvailability] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [expertId, setExpertId] = useState(null);
 
-  // Function to select an image
-  const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 1,
-    };
+  // Fetch expert data
+  const fetchExpertDetails = async () => {
+    setLoading(true);
+    try {
+      const { data: user, error: userError } = await supabase.auth.getUser();
 
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorMessage) {
-        console.log('ImagePicker Error: ', response.errorMessage);
-      } else {
-        setProfileImage(response.assets[0].uri);
+      if (userError) {
+        console.error('Error getting current user:', userError);
+        setLoading(false);
+        return;
       }
-    });
+
+      const userEmail = user?.user?.email;
+
+      if (!userEmail) {
+        console.error('User email not found');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('experts')
+        .select('*')
+        .eq('email', userEmail)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('New user, no profile yet');
+          setEmail(userEmail); // Set the email from auth
+        } else {
+          console.error('Error fetching expert details:', error);
+        }
+      } else if (data) {
+        setExpertId(data.expert_id);
+        setName(data.name || '');
+        setEmail(data.email || '');
+        setCompanyName(data.company_name || '');
+        setDesignation(data.designation || '');
+        setDomain(data.domain_expertise || '');
+        setSkills(data.skills || '');
+        setExperience(data.experience ? data.experience.toString() : '');
+        setHourlyRate(data.hourly_rate ? data.hourly_rate.toString() : '');
+        setAvailability(data.availability !== false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchExpertDetails();
+  }, []);
+
   // Function to save details
-  const saveProfile = () => {
-    Alert.alert('Profile Updated', 'Your details have been saved successfully.');
-    console.log({
-      name,
-      email,
-      university,
-      designation,
-      domain,
-      skills,
-      profileImage,
-    });
+  const saveProfile = async () => {
+    setLoading(true);
+    try {
+      // Validate inputs
+      if (!name.trim() || !email.trim()) {
+        Alert.alert('Error', 'Name and email are required');
+        setLoading(false);
+        return;
+      }
+
+      // Parse numeric fields
+      const parsedExperience = experience ? parseInt(experience) : 0;
+      const parsedHourlyRate = hourlyRate ? parseFloat(hourlyRate) : 0;
+
+      const profileData = {
+        name,
+        email,
+        company_name: companyName,
+        designation,
+        domain_expertise: domain,
+        skills,
+        experience: parsedExperience,
+        hourly_rate: parsedHourlyRate,
+        availability: availability
+      };
+
+      let result;
+      
+      if (expertId) {
+        // Update existing record
+        result = await supabase
+          .from('experts')
+          .update(profileData)
+          .eq('expert_id', expertId);
+      } else {
+        // Insert new record
+        result = await supabase
+          .from('experts')
+          .insert([profileData]);
+      }
+
+      const { error } = result;
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        Alert.alert('Error', 'Failed to save profile. Please try again.');
+      } else {
+        Alert.alert('Success', 'Your profile has been saved successfully.');
+        // Refresh expert details to get the ID if it was a new record
+        fetchExpertDetails();
+      }
+    } catch (error) {
+      console.error('Unexpected error during save:', error);
+      Alert.alert('Error', 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,25 +140,49 @@ const ExpertProfileScreen = ({ navigation }) => {
 
       <Text style={styles.title}>Expert Profile</Text>
 
-      <TouchableOpacity style={styles.profileImageContainer} onPress={selectImage}>
+      <View style={styles.profileImageContainer}>
         <Image
-          source={profileImage ? { uri: profileImage } : require('../../assets/profile_logo.png')}
+          source={require('../../assets/profile_logo.png')}
           style={styles.profileImage}
         />
-        <Text style={styles.uploadText}>Tap to Upload</Text>
-      </TouchableOpacity>
+        <Text style={styles.uploadText}>Profile Picture</Text>
+      </View>
 
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Name" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={email} editable={false} placeholder="Email/Username" placeholderTextColor="#6B7280" />
-
-      <TextInput style={styles.input} value={companyname} onChangeText={setCompany} placeholder="Company Name" placeholderTextColor="#6B7280" />
+      <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email/Username" placeholderTextColor="#6B7280" />
+      <TextInput style={styles.input} value={companyName} onChangeText={setCompanyName} placeholder="Company Name" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={designation} onChangeText={setDesignation} placeholder="Designation" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={domain} onChangeText={setDomain} placeholder="Domain" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={skills} onChangeText={setSkills} placeholder="Skills" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={experience} onChangeText={setExperience} placeholder="Experience" placeholderTextColor="#6B7280" />
+      <TextInput style={styles.input} value={domain} onChangeText={setDomain} placeholder="Domain Expertise" placeholderTextColor="#6B7280" />
+      <TextInput 
+        style={styles.input} 
+        value={skills} 
+        onChangeText={setSkills} 
+        placeholder="Skills" 
+        placeholderTextColor="#6B7280"
+      />
+      <TextInput 
+        style={styles.input} 
+        value={experience} 
+        onChangeText={setExperience} 
+        placeholder="Experience (in years)" 
+        placeholderTextColor="#6B7280"
+        keyboardType="numeric"
+      />
+      <TextInput 
+        style={styles.input} 
+        value={hourlyRate} 
+        onChangeText={setHourlyRate} 
+        placeholder="Hourly Rate" 
+        placeholderTextColor="#6B7280"
+        keyboardType="numeric"
+      />
 
-      <TouchableOpacity style={styles.button} onPress={saveProfile}>
-        <Text style={styles.buttonText}>Save Details</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.disabledButton]} 
+        onPress={saveProfile}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? 'Saving...' : 'Save Details'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -135,6 +246,9 @@ const styles = StyleSheet.create({
     width: 170,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#9AA5B1',
   },
   buttonText: {
     color: '#FFFFFF',

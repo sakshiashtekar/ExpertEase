@@ -3,10 +3,18 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } fro
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../supabase'; // Ensure this path is correct for your project
 
 const PostDoubtScreen = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  // Form state
+  const [email, setEmail] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [domain, setDomain] = useState(''); // Added domain field to match database
 
   // Request media library permission
   useEffect(() => {
@@ -23,24 +31,24 @@ const PostDoubtScreen = () => {
   // Function to pick an image from the gallery
   const pickImage = async () => {
     try {
-      console.log('Opening image picker...');  // Debugging: Log when the picker is triggered
+      console.log('Opening image picker...');
 
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,  // Correct way to specify media type
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
       });
 
-      console.log('Image picker result: ', result);  // Debugging: Log the result after picking
+      console.log('Image picker result: ', result);
 
       if (!result.canceled) {
-        setImage(result.assets[0].uri);  // Update state with selected image URI
+        setImage(result.assets[0].uri);
       } else {
-        console.log('No image selected');  // Debugging: Log if no image was selected
+        console.log('No image selected');
       }
     } catch (error) {
-      console.error('Error picking image:', error);  // Debugging: Log errors if any
+      console.error('Error picking image:', error);
     }
   };
 
@@ -48,22 +56,167 @@ const PostDoubtScreen = () => {
     navigation.navigate('StudentDrawer', { screen: 'StudentHome' });
   };  
   
+  // Function to upload image to Supabase Storage
+  const uploadImage = async () => {
+    if (!image) return null;
+    
+    try {
+      const fileExt = image.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `doubt_images/${fileName}`;
+      
+      // Convert URI to Blob
+      const response = await fetch(image);
+      const blob = await response.blob();
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('doubt_images')
+        .upload(filePath, blob);
+        
+      if (error) {
+        console.error('Error uploading image:', error);
+        return null;
+      }
+      
+      // Get public URL for the uploaded image
+      const { data: urlData } = supabase.storage
+        .from('doubt_images')
+        .getPublicUrl(filePath);
+        
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error in image upload process:', error);
+      return null;
+    }
+  };
+
+  // Function to fetch student_id using email
+  const getStudentId = async (email) => {
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('student_id')
+        .eq('email', email)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching student ID:', error);
+        return null;
+      }
+      
+      return data?.student_id;
+    } catch (error) {
+      console.error('Error in getStudentId function:', error);
+      return null;
+    }
+  };
+
+  // Function to post doubt to Supabase
+  const postDoubt = async () => {
+    if (!email || !title || !description || !domain) {
+      Alert.alert('Missing Information', 'Please fill in all required fields.');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Get student_id based on email
+      const studentId = await getStudentId(email);
+      
+      if (!studentId) {
+        Alert.alert('Error', 'Email not found in our records. Please check your email address.');
+        setLoading(false);
+        return;
+      }
+      
+      // Upload image if selected
+      const imageUrl = image ? await uploadImage() : null;
+      
+      // Insert doubt into database
+      const { data, error } = await supabase
+        .from('doubts')
+        .insert([
+          {
+            student_id: studentId,
+            title: title,
+            description: description,
+            domain: domain,
+            status: 'pending', // Default status for new doubts
+            posted_by: email, // This references email from students table
+            created_at: new Date().toISOString(),
+            image_url: imageUrl
+          }
+        ]);
+      
+      if (error) {
+        console.error('Error posting doubt:', error);
+        Alert.alert('Error', 'Failed to post doubt. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      Alert.alert('Success', 'Your doubt has been posted successfully!');
+      // Reset form
+      setEmail('');
+      setTitle('');
+      setDescription('');
+      setDomain('');
+      setImage(null);
+      
+      // Navigate back
+      navigation.navigate('StudentDrawer', { screen: 'StudentHome' });
+      
+    } catch (error) {
+      console.error('Error in posting doubt:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
-     <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+      <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Post Doubt</Text>
-      <TextInput placeholder="Enter your email id" style={styles.input} />
-      <TextInput style={styles.input} placeholder="Doubt Title" placeholderTextColor="#7E7E7E" />
+      
+      <TextInput 
+        placeholder="Enter your email id" 
+        style={styles.input} 
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      
+      <TextInput 
+        style={styles.input} 
+        placeholder="Doubt Title" 
+        placeholderTextColor="#7E7E7E" 
+        value={title}
+        onChangeText={setTitle}
+      />
 
       <TextInput
         style={[styles.input, styles.descriptionInput]}
         placeholder="Doubt Description"
         placeholderTextColor="#7E7E7E"
         multiline
+        value={description}
+        onChangeText={setDescription}
+      />
+      
+      {/* Added domain input field */}
+      <TextInput 
+        style={styles.input} 
+        placeholder="Doubt Domain (e.g., Math, Physics)" 
+        placeholderTextColor="#7E7E7E" 
+        value={domain}
+        onChangeText={setDomain}
       />
 
       <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
@@ -73,8 +226,14 @@ const PostDoubtScreen = () => {
 
       {image && <Image source={{ uri: image }} style={styles.uploadedImage} />}
 
-      <TouchableOpacity style={styles.postButton}>
-        <Text style={styles.postButtonText}>Post Doubt</Text>
+      <TouchableOpacity 
+        style={[styles.postButton, loading && styles.disabledButton]} 
+        onPress={postDoubt}
+        disabled={loading}
+      >
+        <Text style={styles.postButtonText}>
+          {loading ? 'Posting...' : 'Post Doubt'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -116,6 +275,7 @@ const styles = StyleSheet.create({
   descriptionInput: {
     height: 200,
     textAlignVertical: 'top',
+    paddingTop: 15,
   },
   imageUpload: {
     flexDirection: 'row',
@@ -149,6 +309,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  disabledButton: {
+    backgroundColor: '#7E7E7E',
+  }
 });
 
 export default PostDoubtScreen;
