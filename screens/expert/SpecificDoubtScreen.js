@@ -41,13 +41,14 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
       <Text style={styles.detail}>{doubt.title}</Text>
       <Text style={styles.Text}>Domain:</Text>
       <Text style={styles.detail}>{doubt.domain}</Text>
-      <Text style={styles.Text}>Timeslot:</Text>
-      <Text style={styles.detail}>{doubt.timeslot}</Text>
-      <Text style={styles.Text}>Charges:</Text>
-      <Text style={styles.detail}>{doubt.charges}</Text>
       <Text style={styles.Text}>Description of the doubt: </Text>
       <Text style={styles.detail}>{doubt.description || 'No description available.'}</Text>
-
+      <Text style={styles.Text}>Doubt Photo:</Text>
+      <Text style={styles.detail}>{doubt.doubt_photo}</Text>
+      <Text style={styles.Text}>Email:</Text>
+      <Text style={styles.detail}>{doubt.posted_by}</Text>
+      <Text style={styles.Text}>Instruction:</Text>
+      <Text style = {styles.detail}>While scheduling the meeting, please use the following format for the Meeting Title: Doubt Title - Expert Name</Text>
       <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
         <Image source={require('../../assets/google_logo.png')} style={styles.logo} />
         <Text style={styles.buttonText}>Schedule a Meet</Text>

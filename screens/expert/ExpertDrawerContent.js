@@ -14,19 +14,13 @@ const ExpertDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('ExpertHome')}>
         <Text style={styles.drawerItem}>Home</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('ExpertProfile')}>
         <Text style={styles.drawerItem}>Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('ExpertHistory')}>
-        <Text style={styles.drawerItem}>History</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('Chatbot')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('DataDisplays')}>
-        <Text style={styles.drawerItem}>Data</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
       <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
           <Text style={styles.logout}>Logout</Text>

@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 const ExpertHomeScreen = () => {
   const navigation = useNavigation();
 
-  const [users, setUsers] = useState([]); // ✅ useState moved inside component
+  const [users, setUsers] = useState([]);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.from('doubts').select('*');
@@ -22,19 +22,6 @@ const ExpertHomeScreen = () => {
     fetchUsers();
   }, []);
 
-  const fetchExpertDetails = async () => {
-    const { data, error } = await supabase.from('experts').select('*');
-    if (error) {
-      console.error('Error fetching users:', error);
-    } else {
-      setUsers(data);
-    }
-  };
-
-  useEffect(() => {
-    fetchExpertDetails();
-  }, []);
-
   const handleDoubtPress = (doubt) => {
     navigation.navigate('SpecificDoubt', { doubt });
   };
@@ -47,8 +34,8 @@ const ExpertHomeScreen = () => {
         <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
           <View style={styles.cardContent}>
             <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
-            <Text style={styles.cardText}>Domain: {item.tags}</Text>
-            <Text style={styles.cardText}>Charges: {item.hourly_rate}</Text>
+            <Text style={styles.cardText}>Domain: {item.domain}</Text>
+            <Text style={styles.cardText}>Student Email: {item.posted_by}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -92,7 +79,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
-    marginTop: 20,
+    marginTop: 40,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -103,7 +90,7 @@ const styles = StyleSheet.create({
     borderColor: '#1D3557',
     borderRadius: 20,
     paddingHorizontal: 15,
-    marginTop: 20,
+    marginTop: 40,
   },
   searchIcon: {
     marginRight: 10,
