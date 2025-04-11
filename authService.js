@@ -10,31 +10,44 @@ const AUTH0_DOMAIN = "dev-w3p1twys85rx8ekx.us.auth0.com"
 const AUTH0_CLIENT_ID = "u5hqWLFwHEW2aUFfY1G214ZUnlHVMUPD"
 const AUTH_AUDIENCE = `https://${AUTH0_DOMAIN}/api/v2/`
 const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: "your-app-scheme",
-  path: "callback",
-})
-
+  useProxy: true,
+});
+console.log("Redirect URI", REDIRECT_URI)
 // Store for PKCE code verifier
 let codeVerifier = null
 
 // Generate PKCE code verifier and challenge
+// Generate PKCE code verifier and challenge
 const generatePKCE = async () => {
-  // Generate a random string for the code verifier
+  // Generate random bytes for verifier
   const randomBytes = await Random.getRandomBytesAsync(32)
+  
+  // Create verifier as base64url-encoded string
   codeVerifier = Buffer.from(randomBytes)
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "")
-    .substr(0, 43)
-
-  // Create code challenge from verifier
-  const challenge = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, codeVerifier, {
-    encoding: Crypto.CryptoEncoding.BASE64,
-  })
-
-  // Return the base64-url encoded challenge
-  return challenge.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+  
+  // Ensure verifier meets length requirements (min 43 chars)
+  if (codeVerifier.length < 43) {
+    codeVerifier = codeVerifier.padEnd(43, "0")
+  }
+  
+  // Create the challenge by hashing the verifier with SHA-256
+  const challengeBuffer = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    codeVerifier
+  )
+  
+  // Convert the challenge hash to base64url encoding
+  const challenge = Buffer.from(challengeBuffer)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "")
+  
+  return challenge
 }
 
 // Use Auth0 authentication request

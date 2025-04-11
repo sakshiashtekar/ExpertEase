@@ -93,6 +93,8 @@ const ExpertSignupScreen = ({ navigation }) => {
 
   // Handle email/password sign-up with Auth0
   const handleSignUp = async () => {
+  // Handle email/password sign-up with Auth0
+  const handleSignUp = async () => {
     // Validate inputs
     if (!email || !password || !confirmPassword) {
       return Alert.alert("Error", "Please fill in all fields")
@@ -160,6 +162,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
         editable={!isLoading}
+        editable={!isLoading}
       />
 
       <Text style={styles.label}>Password</Text>
@@ -170,6 +173,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         value={password}
         onChangeText={setPassword}
         editable={!isLoading}
+        editable={!isLoading}
       />
 
       <Text style={styles.label}>Confirm Password</Text>
@@ -179,6 +183,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
+        editable={!isLoading}
         editable={!isLoading}
       />
 

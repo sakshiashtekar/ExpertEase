@@ -7,6 +7,12 @@ import {
   exchangeCodeForToken,
   setUserRole 
 } from '../../authService';
+import { 
+  useAuthRequest, 
+  loginWithAuth0, 
+  exchangeCodeForToken,
+  setUserRole 
+} from '../../authService';
 
 const ExpertLoginScreen = ({ navigation }) => {
   // State for form fields
@@ -18,12 +24,37 @@ const ExpertLoginScreen = ({ navigation }) => {
   const [request, response, promptAsync] = useAuthRequest();
 
   // Handle Auth0 response
+  // Handle Auth0 response
   useEffect(() => {
     if (response) {
       console.log("Auth response type:", response.type);
       
       if (response.type === 'success') {
         const { code } = response.params;
+        handleAuthCode(code);
+      } else if (response.type === 'error') {
+        setIsLoading(false);
+        console.error("Auth error:", response.error);
+        
+        Alert.alert(
+          "Authentication Error", 
+          response.params?.error_description || 
+          "Failed to authenticate with Google. Please try again."
+        );
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [response, navigation]);
+
+  // Process authorization code
+  const handleAuthCode = async (code) => {
+    try {
+      const result = await exchangeCodeForToken(code);
+      
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
         handleAuthCode(code);
       } else if (response.type === 'error') {
         setIsLoading(false);
@@ -69,14 +100,21 @@ const ExpertLoginScreen = ({ navigation }) => {
       } else {
         setIsLoading(false);
         Alert.alert("Login Error", result.error);
+        Alert.alert("Login Error", result.error);
       }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error processing auth code:", error);
+      Alert.alert("Authentication Error", "Failed to complete authentication");
     } catch (error) {
       setIsLoading(false);
       console.error("Error processing auth code:", error);
       Alert.alert("Authentication Error", "Failed to complete authentication");
     }
   };
+  };
 
+  // Handle Google sign-in
   // Handle Google sign-in
   const handleGoogleLogin = async () => {
     console.log("Starting Google Sign-In process");
@@ -92,6 +130,8 @@ const ExpertLoginScreen = ({ navigation }) => {
     try {
       await promptAsync({ useProxy: true });
       // Result will be handled in the useEffect with the response
+      await promptAsync({ useProxy: true });
+      // Result will be handled in the useEffect with the response
     } catch (error) {
       setIsLoading(false);
       console.error("Google login error:", error);
@@ -101,6 +141,8 @@ const ExpertLoginScreen = ({ navigation }) => {
 
   // Handle email/password login with Auth0
   const handleLogin = async () => {
+  // Handle email/password login with Auth0
+  const handleLogin = async () => {
     // Validate inputs
     if (!email || !password) {
       return Alert.alert("Error", "Please enter both email and password");
@@ -108,6 +150,38 @@ const ExpertLoginScreen = ({ navigation }) => {
     
     setIsLoading(true);
     
+    try {
+      const result = await loginWithAuth0(email, password);
+      
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
+        
+        setIsLoading(false);
+        Alert.alert(
+          "Login Successful", 
+          "You've successfully logged in!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'ExpertDrawer' }],
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        setIsLoading(false);
+        Alert.alert("Login Error", result.error);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Login error:", error);
+      Alert.alert("Login Error", "Failed to log in. Please check your credentials and try again.");
+    }
     try {
       const result = await loginWithAuth0(email, password);
       
@@ -197,6 +271,7 @@ const ExpertLoginScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity 
+        onPress={() => navigation.navigate('ExpertSignUp')}
         onPress={() => navigation.navigate('ExpertSignUp')}
         disabled={isLoading}
       >
