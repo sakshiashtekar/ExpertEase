@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { supabase } from '../supabase'; // adjust path if needed
 
 const StudentProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('shubham@gmail.com'); // static for now
+  const [email, setEmail] = useState('');
   const [university, setUniversity] = useState('');
   const [domain, setDomain] = useState(''); 
   const [skills, setSkills] = useState('');
@@ -36,14 +36,6 @@ const StudentProfileScreen = ({ navigation }) => {
         .select('*')
         .eq('email', userEmail)
         .single();
-  // Fetch student data from Supabase
-  useEffect(() => {
-    const fetchStudent = async () => {
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('email', email)
-        .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -67,7 +59,8 @@ const StudentProfileScreen = ({ navigation }) => {
     }
   };
 
-    fetchStudent();
+  useEffect(() => {
+    fetchStudentDetails();
   }, []);
 
   const saveProfile = async () => {
@@ -96,13 +89,6 @@ const StudentProfileScreen = ({ navigation }) => {
           .from('students')
           .update(profileData)
           .eq('student_id', studentId);
-  const selectImage = () => {
-    const options = { mediaType: 'photo', quality: 1 };
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorMessage) {
-        console.log('ImagePicker Error: ', response.errorMessage);
       } else {
         // Insert new record
         result = await supabase
@@ -145,8 +131,6 @@ const StudentProfileScreen = ({ navigation }) => {
       </View>
 
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Name" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={email} editable={false} placeholder="Email/Username" placeholderTextColor="#6B7280" />
-      
       <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email/Username" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={university} onChangeText={setUniversity} placeholder="University Name" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={domain} onChangeText={setDomain} placeholder="Domain" placeholderTextColor="#6B7280" />
@@ -184,7 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backButtonText: {
-    fontSize: 25,  
+    fontSize: 25,
     color: '#000',
     fontWeight: 'bold',
   },
