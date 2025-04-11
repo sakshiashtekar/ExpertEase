@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { supabase } from '../supabase'; // adjust path if needed
@@ -6,57 +6,36 @@ import { supabase } from '../supabase'; // adjust path if needed
 const StudentProfileScreen = ({ navigation }) => {
   const [profileImage, setProfileImage] = useState(null);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('shubham@gmail.com'); // static for now
   const [university, setUniversity] = useState('');
   const [domain, setDomain] = useState('');
   const [skills, setSkills] = useState('');
 
-  // Fetch student data
-  const fetchStudentDetails = async () => {
-    const { data: user, error: userError } = await supabase.auth.getUser();
-
-    if (userError) {
-      console.error('Error getting current user:', userError);
-      return;
-    }
-
-    const userEmail = user?.user?.email;
-
-    if (!userEmail) {
-      console.error('User email not found');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('students')
-      .select('*')
-      .eq('email', userEmail)
-      .single();
-
-    if (error) {
-      console.error('Error fetching student details:', error);
-    } else {
-      setName(data.name || '');
-      setEmail(data.email || '');
-      setUniversity(data.university || '');
-      setDomain(data.domain || '');
-      setSkills(data.skills || '');
-      if (data.profile_image_url) {
-        setProfileImage(data.profile_image_url); // optional: if you store image URL
-      }
-    }
-  };
-
+  // Fetch student data from Supabase
   useEffect(() => {
-    fetchStudentDetails();
+    const fetchStudent = async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (error) {
+        console.log('Error fetching student:', error.message);
+      } else if (data) {
+        setName(data.name || '');
+        setUniversity(data.university || '');
+        setDomain(data.domain || '');
+        setSkills(data.skills || '');
+        if (data.profileImage) setProfileImage(data.profileImage); // optional
+      }
+    };
+
+    fetchStudent();
   }, []);
 
   const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 1,
-    };
-
+    const options = { mediaType: 'photo', quality: 1 };
     launchImageLibrary(options, (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
@@ -98,6 +77,7 @@ const StudentProfileScreen = ({ navigation }) => {
 
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Name" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={email} editable={false} placeholder="Email/Username" placeholderTextColor="#6B7280" />
+      
       <TextInput style={styles.input} value={university} onChangeText={setUniversity} placeholder="University Name" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={domain} onChangeText={setDomain} placeholder="Domain" placeholderTextColor="#6B7280" />
       <TextInput style={styles.input} value={skills} onChangeText={setSkills} placeholder="Skills" placeholderTextColor="#6B7280" />
@@ -123,7 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backButtonText: {
-    fontSize: 25,
+    fontSize: 25,  
     color: '#000',
     fontWeight: 'bold',
   },
