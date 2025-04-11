@@ -1,37 +1,43 @@
-import React, { useState } from 'react';  
-import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 
-const SpecificDoubtScreen = ({ route, navigation }) => {
+const SpecificDoubtScreen = ({ route }) => {
   const { doubt } = route.params;
+  const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedCharge, setSelectedCharge] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [customCharge, setCustomCharge] = useState('');
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingTime, setMeetingTime] = useState('');
 
-  const handleScheduleMeet = () => {
-    console.log('Meeting scheduled for:', doubt.title);
-    console.log('Charge:', selectedCharge || customCharge);
-    console.log('Time:', selectedTime);
-    setIsModalVisible(false); 
+  const handleOpenCalendar = () => {
+    if (!meetingTitle || !meetingDate || !meetingTime) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const formattedDate = meetingDate.replace(/-/g, ''); // YYYYMMDD
+    const formattedTime = meetingTime.replace(/:/g, ''); // HHMMSS
+    const startDateTime = `${formattedDate}T${formattedTime}00Z`;
+    const endDateTime = `${formattedDate}T${formattedTime}00Z`; // Adjust for duration if needed
+
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}`;
+    Linking.openURL(calendarUrl);
+
+    setIsModalVisible(false);
   };
 
   const handleGoBack = () => {
     navigation.navigate('ExpertDrawer', { screen: 'ExpertHome' });
-  };  
-  
-  const handleChargeChange = (itemValue) => {
-    setSelectedCharge(itemValue);
-    setCustomCharge(''); 
-  };
-
-  const handleTimeChange = (itemValue) => {
-    setSelectedTime(itemValue);
   };
 
   return (
     <View style={styles.container}>
+      {/* Back Button only */}
       <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
@@ -41,7 +47,11 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
       <Text style={styles.detail}>{doubt.title}</Text>
       <Text style={styles.Text}>Domain:</Text>
       <Text style={styles.detail}>{doubt.domain}</Text>
-      <Text style={styles.Text}>Description of the doubt: </Text>
+      <Text style={styles.Text}>Timeslot:</Text>
+      <Text style={styles.detail}>{doubt.timeslot}</Text>
+      <Text style={styles.Text}>Charges:</Text>
+      <Text style={styles.detail}>{doubt.charges}</Text>
+      <Text style={styles.Text}>Description of the doubt:</Text>
       <Text style={styles.detail}>{doubt.description || 'No description available.'}</Text>
       <Text style={styles.Text}>Doubt Photo:</Text>
       <Text style={styles.detail}>{doubt.doubt_photo}</Text>
@@ -54,7 +64,7 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
         <Text style={styles.buttonText}>Schedule a Meet</Text>
       </TouchableOpacity>
 
-      {/* Modal for selecting charge */}
+      {/* Modal for entering meeting info */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -63,48 +73,40 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Charges</Text>
+            <Text style={styles.modalTitle}>Enter Meeting Details</Text>
 
-            {/* Charge Picker */}
-            <Picker
-              selectedValue={selectedCharge}
-              onValueChange={handleChargeChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select a Charge" value="" />
-              <Picker.Item label="50" value="50" />
-              <Picker.Item label="75" value="75" />
-              <Picker.Item label="100" value="100" />
-            </Picker>
+            <TextInput
+              placeholder="Meeting Title"
+              style={styles.input}
+              value={meetingTitle}
+              onChangeText={setMeetingTitle}
+            />
 
-            {/* Time Picker */}
-            <Picker
-              selectedValue={selectedTime}
-              onValueChange={handleTimeChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select a Time" value="" />
-              <Picker.Item label="5pm" value="5pm" />
-              <Picker.Item label="7pm" value="7pm" />
-              <Picker.Item label="10pm" value="10pm" />
-            </Picker>
+            <TextInput
+              placeholder="Date (YYYY-MM-DD)"
+              style={styles.input}
+              value={meetingDate}
+              onChangeText={setMeetingDate}
+              keyboardType="numeric"
+            />
+
+            <TextInput
+              placeholder="Time (HH:MM)"
+              style={styles.input}
+              value={meetingTime}
+              onChangeText={setMeetingTime}
+              keyboardType="numeric"
+            />
 
             <View style={styles.modalButtonRow}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={handleScheduleMeet}
-                disabled={!selectedCharge && !customCharge || !selectedTime}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={handleOpenCalendar}>
                 <View style={styles.modalButtonRowInner}>
                   <Image source={require('../../assets/google_logo.png')} style={styles.logo} />
                   <Text style={styles.modalButtonText}>Schedule</Text>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setIsModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -122,8 +124,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    marginTop: 25,
-    marginLeft: 10,
+    marginTop: 35,
+    marginLeft: 20,
     borderRadius: 10,
   },
   backButtonText: {
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     paddingVertical: 10,
-    marginTop: 20,
+    marginTop: 40,
     backgroundColor: '#1D3557',
     borderRadius: 30,
     alignItems: 'center',
@@ -190,11 +192,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
   },
-  picker: {
-    width: '100%',
-    height: 60,
-    marginBottom: 15,
-  },
   input: {
     width: '100%',
     height: 40,
@@ -210,8 +207,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 20,
     marginBottom: 15,
-    marginRight: 5, 
-    flex: 1, 
+    marginRight: 5,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

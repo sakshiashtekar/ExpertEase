@@ -6,6 +6,7 @@ import logo from '../../assets/expertease_logo.png';
 const StudentDrawerContent = (props) => {
   return (
     <View style={styles.drawerContent}>
+
       <View style={styles.header}>
       <Image source={logo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.heading}>ExpertEase</Text>
@@ -17,7 +18,10 @@ const StudentDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('StudentProfile')}>
         <Text style={styles.drawerItem}>Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('Chatbot')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('')}>
+        <Text style={styles.drawerItem}>History</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => props.navigation.navigate('ChatbotScreen')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>

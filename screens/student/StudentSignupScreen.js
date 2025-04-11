@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import { auth0Domain, auth0ClientId } from '../../authConfig';
+import { auth0Domain, auth0ClientId } from '../../authService';
 
 const redirectUri = AuthSession.makeRedirectUri({
   useProxy: true,

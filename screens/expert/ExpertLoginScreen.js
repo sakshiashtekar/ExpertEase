@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import { auth0Domain, auth0ClientId } from '../../authConfig';
-
-// Define the redirect URI with proper configuration
-const redirectUri = AuthSession.makeRedirectUri({
-  useProxy: true,
-});
-// Add this right after you define the redirectUri
-console.log("REDIRECT URI:", redirectUri);
+import { 
+  useAuthRequest, 
+  loginWithAuth0, 
+  exchangeCodeForToken,
+  setUserRole 
+} from '../../authService';
 
 const ExpertLoginScreen = ({ navigation }) => {
   // State for form fields
@@ -16,37 +14,40 @@ const ExpertLoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Setup Auth0 discovery
-  const discovery = {
-    authorizationEndpoint: `https://${auth0Domain}/authorize`,
-    tokenEndpoint: `https://${auth0Domain}/oauth/token`,
-    revocationEndpoint: `https://${auth0Domain}/oauth/revoke`,
-  };
+  // Use our centralized Auth0 request hook
+  const [request, response, promptAsync] = useAuthRequest();
 
-  // Setup Auth0 request with minimal configuration
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: auth0ClientId,
-      redirectUri,
-      responseType: 'code',
-      scopes: ['openid', 'profile', 'email'],
-      // Simplified configuration
-      extraParams: {
-        connection: 'google-oauth2',
-      },
-    },
-    discovery
-  );
-
-  // Handle Auth0 response with improved logging
+  // Handle Auth0 response
   useEffect(() => {
     if (response) {
       console.log("Auth response type:", response.type);
-      console.log("Auth response params:", response.params);
       
       if (response.type === 'success') {
         const { code } = response.params;
-        console.log("Authorization Code:", code);
+        handleAuthCode(code);
+      } else if (response.type === 'error') {
+        setIsLoading(false);
+        console.error("Auth error:", response.error);
+        
+        Alert.alert(
+          "Authentication Error", 
+          response.params?.error_description || 
+          "Failed to authenticate with Google. Please try again."
+        );
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [response, navigation]);
+
+  // Process authorization code
+  const handleAuthCode = async (code) => {
+    try {
+      const result = await exchangeCodeForToken(code);
+      
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
         
         setIsLoading(false);
         Alert.alert(
@@ -65,27 +66,18 @@ const ExpertLoginScreen = ({ navigation }) => {
             }
           ]
         );
-      } else if (response.type === 'error') {
-        setIsLoading(false);
-        console.error("Auth error details:", {
-          error: response.error,
-          errorDescription: response.params?.error_description,
-          errorUri: response.params?.error_uri
-        });
-        
-        Alert.alert(
-          "Authentication Error", 
-          response.params?.error_description || 
-          "Failed to authenticate with Google. Please try again later."
-        );
       } else {
         setIsLoading(false);
-        console.log("Auth response not handled:", response.type);
+        Alert.alert("Login Error", result.error);
       }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error processing auth code:", error);
+      Alert.alert("Authentication Error", "Failed to complete authentication");
     }
-  }, [response, navigation]);
+  };
 
-  // Handle Google sign-in with better error handling
+  // Handle Google sign-in
   const handleGoogleLogin = async () => {
     console.log("Starting Google Sign-In process");
     
@@ -95,33 +87,20 @@ const ExpertLoginScreen = ({ navigation }) => {
       return;
     }
     
-    console.log("Auth request configuration:", {
-      url: request.url,
-      codeChallenge: request.codeChallenge ? '[present]' : '[not present]',
-      state: request.state ? '[present]' : '[not present]',
-    });
-    
     setIsLoading(true);
     
     try {
-      const result = await promptAsync({ useProxy: true });
-      console.log("promptAsync completed with result type:", result.type);
-      
-      // Note: We don't need to handle success here as it's handled in the useEffect
-      if (result.type !== 'success') {
-        setIsLoading(false);
-        console.log("promptAsync did not succeed:", result);
-      }
+      await promptAsync({ useProxy: true });
+      // Result will be handled in the useEffect with the response
     } catch (error) {
       setIsLoading(false);
       console.error("Google login error:", error);
-      console.error("Error stack:", error.stack);
       Alert.alert("Error", `Authentication failed: ${error.message}`);
     }
   };
 
-  // Handle email/password login
-  const handleLogin = () => {
+  // Handle email/password login with Auth0
+  const handleLogin = async () => {
     // Validate inputs
     if (!email || !password) {
       return Alert.alert("Error", "Please enter both email and password");
@@ -129,29 +108,38 @@ const ExpertLoginScreen = ({ navigation }) => {
     
     setIsLoading(true);
     
-    // Simulate authentication process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const result = await loginWithAuth0(email, password);
       
-      // Here you would typically call your Auth0 login endpoint
-      // For now, simulate a successful login
-      Alert.alert(
-        "Login Successful", 
-        "You've successfully logged in!",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Navigate to ExpertDrawer which contains ExpertHome
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'ExpertDrawer' }],
-              });
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
+        
+        setIsLoading(false);
+        Alert.alert(
+          "Login Successful", 
+          "You've successfully logged in!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'ExpertDrawer' }],
+                });
+              }
             }
-          }
-        ]
-      );
-    }, 1000);
+          ]
+        );
+      } else {
+        setIsLoading(false);
+        Alert.alert("Login Error", result.error);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Login error:", error);
+      Alert.alert("Login Error", "Failed to log in. Please check your credentials and try again.");
+    }
   };
 
   return (
@@ -209,7 +197,7 @@ const ExpertLoginScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity 
-        onPress={() => navigation.navigate('ExpertSignup')}
+        onPress={() => navigation.navigate('ExpertSignUp')}
         disabled={isLoading}
       >
         <Text style={styles.signInText}>

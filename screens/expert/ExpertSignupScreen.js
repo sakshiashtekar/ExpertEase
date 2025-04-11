@@ -1,89 +1,107 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import { auth0Domain, auth0ClientId } from '../../authConfig';
-
-// Define the redirect URI with proper configuration
-const redirectUri = AuthSession.makeRedirectUri({
-  useProxy: true,
-});
-// Add this right after you define the redirectUri
-console.log("REDIRECT URI:", redirectUri);
+import { 
+  useAuthRequest, 
+  registerWithAuth0, 
+  exchangeCodeForToken,
+  setUserRole 
+} from '../../authService';
 
 const ExpertSignupScreen = ({ navigation }) => {
   // State for form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Setup Auth0 discovery
-  const discovery = {
-    authorizationEndpoint: `https://${auth0Domain}/authorize`,
-    tokenEndpoint: `https://${auth0Domain}/oauth/token`,
-    revocationEndpoint: `https://${auth0Domain}/oauth/revoke`,
-  };
-
-  // Setup Auth0 request
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: auth0ClientId,
-      redirectUri,
-      responseType: 'code',
-      scopes: ['openid', 'profile', 'email'],
-      extraParams: {
-        audience: `https://${auth0Domain}/userinfo`,
-        connection: 'google-oauth2',
-      },
-    },
-    discovery
-  );
+  // Use our centralized Auth0 request hook
+  const [request, response, promptAsync] = useAuthRequest();
 
   // Handle Auth0 response
   useEffect(() => {
-    if (response?.type === 'success') {
-      const { code } = response.params;
-      console.log("Authorization Code:", code);
+    if (response) {
+      console.log("Auth response type:", response.type);
       
-      // Here you would typically exchange the code for tokens
-      // and then navigate to the next screen or update user state
-      Alert.alert(
-        "Login Success", 
-        "You've successfully signed in with Google",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Navigate to ExpertDrawer which contains ExpertHome
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'ExpertDrawer' }],
-              });
-            }
-          }
-        ]
-      );
-    } else if (response?.type === 'error') {
-      Alert.alert(
-        "Authentication Error", 
-        response.error?.description || "Failed to authenticate with Google"
-      );
-      console.error("Auth error:", response.error);
+      if (response.type === 'success') {
+        const { code } = response.params;
+        handleAuthCode(code);
+      } else if (response.type === 'error') {
+        setIsLoading(false);
+        console.error("Auth error:", response.error);
+        
+        Alert.alert(
+          "Authentication Error", 
+          response.params?.error_description || 
+          "Failed to authenticate with Google. Please try again."
+        );
+      } else {
+        setIsLoading(false);
+      }
     }
   }, [response, navigation]);
 
-  // Handle Google sign-in
-  const handleGoogleLogin = async () => {
-    console.log("Starting Google Sign-In process");
+  // Process authorization code
+  const handleAuthCode = async (code) => {
     try {
-      await promptAsync({ useProxy: true });
+      const result = await exchangeCodeForToken(code);
+      
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
+        
+        setIsLoading(false);
+        Alert.alert(
+          "Signup Success", 
+          "You've successfully signed up with Google",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Navigate to ExpertDrawer which contains ExpertHome
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'ExpertDrawer' }],
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        setIsLoading(false);
+        Alert.alert("Signup Error", result.error);
+      }
     } catch (error) {
-      console.error("Google login error:", error);
-      Alert.alert("Error", "Failed to start the authentication process");
+      setIsLoading(false);
+      console.error("Error processing auth code:", error);
+      Alert.alert("Authentication Error", "Failed to complete authentication");
     }
   };
 
-  // Handle email/password sign-up
-  const handleSignUp = () => {
+  // Handle Google sign-up
+  const handleGoogleSignup = async () => {
+    console.log("Starting Google Sign-In process");
+    
+    if (!request) {
+      console.error("Auth request is not ready");
+      Alert.alert("Error", "Authentication service is not ready. Please try again later.");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      await promptAsync({ useProxy: true });
+      // Result will be handled in the useEffect with the response
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Google signup error:", error);
+      Alert.alert("Error", `Authentication failed: ${error.message}`);
+    }
+  };
+
+  // Handle email/password sign-up with Auth0
+  const handleSignUp = async () => {
     // Validate inputs
     if (!email || !password || !confirmPassword) {
       return Alert.alert("Error", "Please fill in all fields");
@@ -93,28 +111,55 @@ const ExpertSignupScreen = ({ navigation }) => {
       return Alert.alert("Error", "Passwords do not match");
     }
     
-    // Here you would typically call your Auth0 signup endpoint
-    // For now, simulate a successful signup
-    Alert.alert(
-      "Sign Up", 
-      "Account created successfully!",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            // Navigate to ExpertDrawer which contains ExpertHome
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'ExpertDrawer' }],
-            });
-          }
-        }
-      ]
-    );
+    // Check password strength
+    if (password.length < 8) {
+      return Alert.alert("Error", "Password must be at least 8 characters long");
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const result = await registerWithAuth0(email, password);
+      
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole('expert');
+        
+        setIsLoading(false);
+        Alert.alert(
+          "Sign Up Successful", 
+          "Your account has been created!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'ExpertDrawer' }],
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        setIsLoading(false);
+        Alert.alert("Sign Up Error", result.error);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Signup error:", error);
+      Alert.alert("Sign Up Error", "Failed to create account. Please try again.");
+    }
   };
 
   return (
     <View style={styles.container}>
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1D3557" />
+        </View>
+      )}
+      
       <Text style={styles.title}>Create Account</Text>
 
       <Text style={styles.signInText4}>
@@ -129,6 +174,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={!isLoading}
       />
 
       <Text style={styles.label}>Password</Text>
@@ -138,6 +184,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         secureTextEntry 
         value={password}
         onChangeText={setPassword}
+        editable={!isLoading}
       />
 
       <Text style={styles.label}>Confirm Password</Text>
@@ -147,15 +194,24 @@ const ExpertSignupScreen = ({ navigation }) => {
         secureTextEntry 
         value={confirmPassword}
         onChangeText={setConfirmPassword}
+        editable={!isLoading}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+      <TouchableOpacity 
+        style={[styles.button, isLoading && styles.disabledButton]} 
+        onPress={handleSignUp}
+        disabled={isLoading}
+      >
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
       <Text style={styles.signInText3}>or sign up with</Text>
 
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
+      <TouchableOpacity 
+        style={[styles.googleButton, isLoading && styles.disabledButton]} 
+        onPress={handleGoogleSignup}
+        disabled={isLoading}
+      >
         <Image
           source={require('../../assets/google_logo.png')}
           style={styles.googleLogo}
@@ -163,7 +219,10 @@ const ExpertSignupScreen = ({ navigation }) => {
         <Text style={styles.googleButtonText}>Sign up with Google</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('ExpertLogin')}>
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('ExpertLogin')}
+        disabled={isLoading}
+      >
         <Text style={styles.signInText}>
           Already have an account?
           <Text style={styles.signInText2}>  Log In</Text>
@@ -179,6 +238,17 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     justifyContent: 'center',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   title: {
     fontSize: 30,
@@ -208,6 +278,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginBottom: 10,
     alignItems: 'center',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
