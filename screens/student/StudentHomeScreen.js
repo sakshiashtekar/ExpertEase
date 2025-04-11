@@ -1,15 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
-const experts = [
-  { id: '1', name: 'sakshi', company: 'ABC Corp', email: 'sakshi@example.com', designation: 'Software Engineer' },
-  { id: '2', name: 'Jash', company: 'XYZ Ltd', email: 'jash@example.com', designation: 'Data Scientist' },
-  { id: '3', name: 'preeti', company: 'Tech Solutions', email: 'preeti@example.com', designation: 'Product Manager' },
-  { id: '4', name: 'aditya', company: 'Technova', email: 'aditya@example.com', designation: 'Java developer' },
-];
+import { supabase } from '../supabase'; // make sure the path is correct
 
 const StudentHomeScreen = ({ navigation }) => {
+  const [experts, setExperts] = useState([]);
+
+  const fetchExperts = async () => {
+    const { data, error } = await supabase.from('experts').select('*');
+    if (error) {
+      console.error('Error fetching experts:', error);
+    } else {
+      setExperts(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchExperts();
+  }, []);
+
   const renderExpertCard = ({ item, index }) => {
     const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
 
@@ -18,9 +27,8 @@ const StudentHomeScreen = ({ navigation }) => {
         <Image style={styles.avatar} source={require('../../assets/profile_logo.png')} />
         <View>
           <Text style={styles.cardText}>{item.name}</Text>
-          <Text style={styles.cardText}>{item.company}</Text>
-          <Text style={styles.cardText}>{item.email}</Text>
-          <Text style={styles.cardText}>{item.designation}</Text>
+          <Text style={styles.cardText}>{item.domain_expertise}</Text>
+          <Text style={styles.cardText}>{item.hourly_rate}</Text>
         </View>
       </View>
     );
@@ -42,17 +50,17 @@ const StudentHomeScreen = ({ navigation }) => {
       </View>
       <Text style={styles.title}>Our Experts</Text>
       <FlatList
-        data={experts}
-        renderItem={renderExpertCard}
-        keyExtractor={(item) => item.id}
-      />
+              data={experts} // ✅ using fetched data
+              renderItem={renderExpertCard}
+              keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
+              ListEmptyComponent={<Text>No experts available.</Text>}
+            />
       <TouchableOpacity style={styles.postButton} onPress={() => navigation.navigate('PostDoubt')}>
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -66,7 +74,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
-    marginTop: 20,
+    marginTop: 40,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -76,7 +84,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#1D3557',
     borderRadius: 20,
-    marginTop: 20,
+    marginTop: 40,
     paddingHorizontal: 15,
   },
   searchIcon: {

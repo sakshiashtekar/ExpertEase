@@ -1,17 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
-
-const doubts = [
-  { id: '1', title: 'What is React Native?', domain: 'Mobile Development', timeslot: '10:00 AM - 11:00 AM', charges: '$20' },
-  { id: '2', title: 'How does Redux work?', domain: 'State Management', timeslot: '11:00 AM - 12:00 PM', charges: '$25' },
-  { id: '3', title: 'What is Blockchain?', domain: 'Blockchain Technology', timeslot: '1:00 PM - 2:00 PM', charges: '$30' },
-  { id: '4', title: 'How to build REST APIs?', domain: 'Backend Development', timeslot: '2:00 PM - 3:00 PM', charges: '$15' },
-];
+import { supabase } from '../supabase';
 
 const ExpertHomeScreen = () => {
   const navigation = useNavigation();
+
+  const [users, setUsers] = useState([]);
+
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.from('doubts').select('*');
+    if (error) {
+      console.error('Error fetching users:', error);
+    } else {
+      setUsers(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleDoubtPress = (doubt) => {
     navigation.navigate('SpecificDoubt', { doubt });
@@ -26,8 +35,7 @@ const ExpertHomeScreen = () => {
           <View style={styles.cardContent}>
             <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
             <Text style={styles.cardText}>Domain: {item.domain}</Text>
-            <Text style={styles.cardText}>Timeslot: {item.timeslot}</Text>
-            <Text style={styles.cardText}>Charges: {item.charges}</Text>
+            <Text style={styles.cardText}>Student Email: {item.posted_by}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -37,21 +45,22 @@ const ExpertHomeScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* Hamburger Icon to open the Drawer */}
         <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
           <Icon name="bars" size={38} color="#E63946" />
         </TouchableOpacity>
-        {/* Search Bar next to Hamburger */}
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
           <TextInput style={styles.searchInput} placeholder="Search doubts" />
         </View>
       </View>
+
       <Text style={styles.title}>Explore Doubts</Text>
+
       <FlatList
-        data={doubts}
+        data={users} // ✅ using fetched data
         renderItem={renderDoubtCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
+        ListEmptyComponent={<Text>No doubts available.</Text>}
       />
     </View>
   );
@@ -70,7 +79,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
-    marginTop : 20,
+    marginTop: 40,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -81,7 +90,7 @@ const styles = StyleSheet.create({
     borderColor: '#1D3557',
     borderRadius: 20,
     paddingHorizontal: 15,
-    marginTop : 20,
+    marginTop: 40,
   },
   searchIcon: {
     marginRight: 10,

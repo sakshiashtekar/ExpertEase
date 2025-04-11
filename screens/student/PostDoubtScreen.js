@@ -56,7 +56,7 @@ const PostDoubtScreen = () => {
       </TouchableOpacity>
 
       <Text style={styles.title}>Post Doubt</Text>
-
+      <TextInput placeholder="Enter your email id" style={styles.input} />
       <TextInput style={styles.input} placeholder="Doubt Title" placeholderTextColor="#7E7E7E" />
 
       <TextInput
