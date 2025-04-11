@@ -23,6 +23,9 @@ const ExpertDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => props.navigation.navigate('DataDisplays')}>
+        <Text style={styles.drawerItem}>Data</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('')}>
       <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
