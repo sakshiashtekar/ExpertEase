@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backButtonText: {
-    fontSize: 25,  
+    fontSize: 45, 
     color: '#000',
     fontWeight: 'bold',
   },

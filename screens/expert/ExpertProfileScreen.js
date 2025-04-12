@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { supabase } from '../supabase'; // adjust path if needed
 
-const ExpertProfileScreen = ({ navigation }) => {
-  // State to store user details
+const ExpertProfileScreen = ({ navigation, route }) => {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(route.params?.email || 'neha@experts.com');
   const [companyName, setCompanyName] = useState('');
   const [designation, setDesignation] = useState('');
   const [domain, setDomain] = useState('');
@@ -16,38 +15,25 @@ const ExpertProfileScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [expertId, setExpertId] = useState(null);
 
-  // Fetch expert data
+  useEffect(() => {
+    fetchExpertDetails();
+  }, []);
+
   const fetchExpertDetails = async () => {
     setLoading(true);
     try {
-      const { data: user, error: userError } = await supabase.auth.getUser();
-
-      if (userError) {
-        console.error('Error getting current user:', userError);
-        setLoading(false);
-        return;
-      }
-
-      const userEmail = user?.user?.email;
-
-      if (!userEmail) {
-        console.error('User email not found');
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('experts')
         .select('*')
-        .eq('email', userEmail)
+        .eq('email', email)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log('New user, no profile yet');
-          setEmail(userEmail); // Set the email from auth
+          console.log('New expert, no profile yet');
         } else {
           console.error('Error fetching expert details:', error);
+          Alert.alert('Error', 'Unable to fetch expert data');
         }
       } else if (data) {
         setExpertId(data.expert_id);
@@ -61,29 +47,22 @@ const ExpertProfileScreen = ({ navigation }) => {
         setHourlyRate(data.hourly_rate ? data.hourly_rate.toString() : '');
         setAvailability(data.availability !== false);
       }
-    } catch (error) {
-      console.error('Unexpected error:', error);
+    } catch (err) {
+      console.error('Unexpected error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchExpertDetails();
-  }, []);
-
-  // Function to save details
   const saveProfile = async () => {
     setLoading(true);
     try {
-      // Validate inputs
       if (!name.trim() || !email.trim()) {
         Alert.alert('Error', 'Name and email are required');
         setLoading(false);
         return;
       }
 
-      // Parse numeric fields
       const parsedExperience = experience ? parseInt(experience) : 0;
       const parsedHourlyRate = hourlyRate ? parseFloat(hourlyRate) : 0;
 
@@ -96,19 +75,16 @@ const ExpertProfileScreen = ({ navigation }) => {
         skills,
         experience: parsedExperience,
         hourly_rate: parsedHourlyRate,
-        availability: availability
+        availability,
       };
 
       let result;
-      
       if (expertId) {
-        // Update existing record
         result = await supabase
           .from('experts')
           .update(profileData)
           .eq('expert_id', expertId);
       } else {
-        // Insert new record
         result = await supabase
           .from('experts')
           .insert([profileData]);
@@ -121,8 +97,7 @@ const ExpertProfileScreen = ({ navigation }) => {
         Alert.alert('Error', 'Failed to save profile. Please try again.');
       } else {
         Alert.alert('Success', 'Your profile has been saved successfully.');
-        // Refresh expert details to get the ID if it was a new record
-        fetchExpertDetails();
+        fetchExpertDetails(); // Refresh data
       }
     } catch (error) {
       console.error('Unexpected error during save:', error);
@@ -147,36 +122,19 @@ const ExpertProfileScreen = ({ navigation }) => {
         />
         <Text style={styles.uploadText}>Profile Picture</Text>
       </View>
-
+      <Text style={styles.label}>Name</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Name" placeholderTextColor="#6B7280" />
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email/Username" placeholderTextColor="#6B7280" />
+      <Text style={styles.label}>Email</Text>
+      <TextInput style={styles.input} value={email} editable={false} placeholder="Email/Username" placeholderTextColor="#6B7280" />
+      <Text style={styles.label4}>Company</Text>
       <TextInput style={styles.input} value={companyName} onChangeText={setCompanyName} placeholder="Company Name" placeholderTextColor="#6B7280" />
+      <Text style={styles.label3}>Designation</Text>
       <TextInput style={styles.input} value={designation} onChangeText={setDesignation} placeholder="Designation" placeholderTextColor="#6B7280" />
+      <Text style={styles.label2}>Domain</Text>
       <TextInput style={styles.input} value={domain} onChangeText={setDomain} placeholder="Domain Expertise" placeholderTextColor="#6B7280" />
-      <TextInput 
-        style={styles.input} 
-        value={skills} 
-        onChangeText={setSkills} 
-        placeholder="Skills" 
-        placeholderTextColor="#6B7280"
-      />
-      <TextInput 
-        style={styles.input} 
-        value={experience} 
-        onChangeText={setExperience} 
-        placeholder="Experience (in years)" 
-        placeholderTextColor="#6B7280"
-        keyboardType="numeric"
-      />
-      <TextInput 
-        style={styles.input} 
-        value={hourlyRate} 
-        onChangeText={setHourlyRate} 
-        placeholder="Hourly Rate" 
-        placeholderTextColor="#6B7280"
-        keyboardType="numeric"
-      />
-
+      <Text style={styles.label3}>Experience</Text>
+      <TextInput style={styles.input} value={experience} onChangeText={setExperience} placeholder="Experience (in years)" placeholderTextColor="#6B7280" keyboardType="numeric" />
+      
       <TouchableOpacity 
         style={[styles.button, loading && styles.disabledButton]} 
         onPress={saveProfile}
@@ -189,10 +147,39 @@ const ExpertProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  label: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginRight: 330,
+    fontWeight: 'bold'
+  },
+  label1: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginRight: 270,
+    fontWeight: 'bold'
+  },
+  label2: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginRight: 320,
+    fontWeight: 'bold'
+  },
+  label3: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginRight: 290,
+    fontWeight: 'bold'
+  },
+  label4: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginRight: 310,
+    fontWeight: 'bold'
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
-    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -202,7 +189,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backButtonText: {
-    fontSize: 25,  
+    fontSize: 45,  
     color: '#000',
     fontWeight: 'bold',
   },
@@ -210,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: -10,
     color: '#1D3557',
   },
   profileImageContainer: {
@@ -236,7 +223,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     color: '#333',
-    width: 380
+    width: 380,
+    fontWeight: 'bold'
   },
   button: {
     backgroundColor: '#1D3557',
@@ -255,6 +243,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  lable: {
+    fontSize: 15,
+    marginBottom: 2,
+    marginLeft: 5,
+    fontWeight: 'bold'
+  }
 });
 
 export default ExpertProfileScreen;
