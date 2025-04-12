@@ -1,7 +1,7 @@
 import React, { useState } from 'react';  
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
+import * as MailComposer from 'expo-mail-composer';
 const SpecificDoubtScreen = ({ route, navigation }) => {
   const { doubt } = route.params;
 
@@ -14,7 +14,17 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
     console.log('Meeting scheduled for:', doubt.title);
     console.log('Charge:', selectedCharge || customCharge);
     console.log('Time:', selectedTime);
-    setIsModalVisible(false); 
+    setIsModalVisible(false);
+  
+    // Trigger email after 30 seconds
+    setTimeout(() => {
+      MailComposer.composeAsync({
+        recipients: ['sakshiashtekar245@gmail.com'],
+        subject: `Reminder: ${doubt.title}`,
+        body: `This is a reminder for your meeting.\n\nTitle: ${doubt.title}\nCharge: ₹${selectedCharge || customCharge}\nTime: ${selectedTime}`,
+      });
+      console.log("Email composer triggered after 30 seconds");
+    }, 3000);
   };
 
   const handleGoBack = () => {

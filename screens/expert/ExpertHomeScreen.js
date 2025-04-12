@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../supabase';
@@ -62,6 +62,17 @@ const ExpertHomeScreen = () => {
         keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
         ListEmptyComponent={<Text>No doubts available.</Text>}
       />
+
+      {/* Chatbot logo at the bottom right */}
+      <TouchableOpacity
+        style={styles.chatbotLogo}
+        onPress={() => navigation.navigate('Chatbot')}
+      >
+        <Image
+          source={require('../../assets/chatbot-logo.png')} // Replace with your logo path
+          style={styles.chatbotImage}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -119,6 +130,20 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 16,
     marginBottom: 5,
+  },
+  chatbotLogo: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#ffff', // Customize background color
+    padding: 10,
+    borderRadius: 50,
+    elevation: 5,
+  },
+  chatbotImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
   },
 });
 

@@ -48,19 +48,34 @@ const StudentHomeScreen = ({ navigation }) => {
           />
         </View>
       </View>
+
       <Text style={styles.title}>Our Experts</Text>
+
       <FlatList
-              data={experts} // ✅ using fetched data
-              renderItem={renderExpertCard}
-              keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
-              ListEmptyComponent={<Text>No experts available.</Text>}
-            />
+        data={experts} // ✅ using fetched data
+        renderItem={renderExpertCard}
+        keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
+        ListEmptyComponent={<Text>No experts available.</Text>}
+      />
+
       <TouchableOpacity style={styles.postButton} onPress={() => navigation.navigate('PostDoubt')}>
         <Text style={styles.postButtonText}>Post Doubt</Text>
+      </TouchableOpacity>
+
+      {/* Chatbot logo at the bottom right */}
+      <TouchableOpacity
+        style={styles.chatbotLogo}
+        onPress={() => navigation.navigate('Chatbot')}
+      >
+        <Image
+          source={require('../../assets/chatbot-logo.png')} // Replace with your logo path
+          style={styles.chatbotImage}
+        />
       </TouchableOpacity>
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -134,6 +149,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  chatbotLogo: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    backgroundColor: '#ffff', // Customize background color
+    padding: 10,
+    borderRadius: 50,
+    elevation: 5,
+  },
+  chatbotImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
   },
 });
 

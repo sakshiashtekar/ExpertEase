@@ -16,6 +16,7 @@ import ExpertProfileScreen from './screens/expert/ExpertProfileScreen';
 import StudentProfileScreen from './screens/student/StudentProfileScreen';
 import ExpertDrawerContent from './screens/expert/ExpertDrawerContent';
 import StudentDrawerContent from './screens/student/StudentDrawerContent';
+import FeedbackScreen from './screens/FeedbackScreen';
 import ChatbotScreen from './screens/ChatbotScreen';
 
 
@@ -27,6 +28,7 @@ const ExpertDrawer = () => (
     <Drawer.Screen name="ExpertHome" component={ExpertHomeScreen} options={{ headerShown: false }} />
     <Drawer.Screen name="ExpertProfile" component={ExpertProfileScreen} options={{ headerShown: false }} />
     <Drawer.Screen name="Chatbot" component={ChatbotScreen} options={{ headerShown: false }} />
+    <Drawer.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }} />
   </Drawer.Navigator>
 );
 
@@ -35,6 +37,7 @@ const StudentDrawer = () => (
     <Drawer.Screen name="StudentHome" component={StudentHomeScreen} options={{ headerShown: false }} />
     <Drawer.Screen name="StudentProfile" component={StudentProfileScreen} options={{ headerShown: false }} />
     <Drawer.Screen name="Chatbot" component={ChatbotScreen} options={{ headerShown: false }} />
+    <Drawer.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }} />
   </Drawer.Navigator>
 );
 
