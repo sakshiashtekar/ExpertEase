@@ -1,251 +1,308 @@
-// Updated Auth0 service
+import React from "react"
+import { startAsync, makeRedirectUri, exchangeCodeAsync } from "expo-auth-session";
 
 import * as AuthSession from "expo-auth-session"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import * as Random from "expo-random"
-import * as Crypto from "expo-crypto"
+import * as SecureStore from "expo-secure-store"
+import { auth0ClientId, auth0Domain, auth0Audience, auth0Scope } from "./authConfig"
 
-// Auth0 configuration
-const AUTH0_DOMAIN = "dev-w3p1twys85rx8ekx.us.auth0.com"
-const AUTH0_CLIENT_ID = "u5hqWLFwHEW2aUFfY1G214ZUnlHVMUPD"
-const AUTH_AUDIENCE = `https://${AUTH0_DOMAIN}/api/v2/`
-const REDIRECT_URI = AuthSession.makeRedirectUri({
+// Constants for secure storage
+const AUTH_TOKEN_KEY = "auth0_token"
+const AUTH_USER_KEY = "auth0_user"
+const USER_ROLE_KEY = "user_role"
+
+// Create the Auth0 redirect URI
+export const redirectUri = AuthSession.makeRedirectUri({
+  scheme: "myapp", // Replace with your app's scheme
+  path: "callback",
   useProxy: true,
-});
-console.log("Redirect URI", REDIRECT_URI)
-// Store for PKCE code verifier
-let codeVerifier = null
+})
 
-// Generate PKCE code verifier and challenge
-// Generate PKCE code verifier and challenge
-const generatePKCE = async () => {
-  // Generate random bytes for verifier
-  const randomBytes = await Random.getRandomBytesAsync(32)
-  
-  // Create verifier as base64url-encoded string
-  codeVerifier = Buffer.from(randomBytes)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
-  
-  // Ensure verifier meets length requirements (min 43 chars)
-  if (codeVerifier.length < 43) {
-    codeVerifier = codeVerifier.padEnd(43, "0")
-  }
-  
-  // Create the challenge by hashing the verifier with SHA-256
-  const challengeBuffer = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    codeVerifier
-  )
-  
-  // Convert the challenge hash to base64url encoding
-  const challenge = Buffer.from(challengeBuffer)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "")
-  
-  return challenge
+// Log the redirect URI for debugging
+console.log("Auth0 Redirect URI:", redirectUri)
+
+// Auth0 endpoints
+const discovery = {
+  authorizationEndpoint: `https://${auth0Domain}/authorize`,
+  tokenEndpoint: `https://${auth0Domain}/oauth/token`,
+  revocationEndpoint: `https://${auth0Domain}/oauth/revoke`,
+  userInfoEndpoint: `https://${auth0Domain}/userinfo`,
 }
 
-// Use Auth0 authentication request
-export const useAuthRequest = () => {
-  const [request, result, promptAsync] = AuthSession.useAuthRequest(
+// Create the Auth0 request hook
+export function useAuthRequest() {
+  return AuthSession.useAuthRequest(
     {
-      redirectUri: REDIRECT_URI,
-      clientId: AUTH0_CLIENT_ID,
+      clientId: auth0ClientId,
+      redirectUri,
       responseType: "code",
-      scopes: ["openid", "profile", "email", "offline_access"],
+      scopes: auth0Scope.split(" "),
       extraParams: {
-        audience: AUTH_AUDIENCE,
-        code_challenge_method: "S256",
-        // Generate a new code challenge on each request
-        get code_challenge() {
-          return generatePKCE().then((challenge) => challenge)
-        },
+        audience: auth0Audience,
+        prompt: "login",
       },
     },
-    { authorizationEndpoint: `https://${AUTH0_DOMAIN}/authorize` },
+    discovery,
   )
-
-  return [request, result, promptAsync]
 }
 
-// Exchange authorization code for token
-export const exchangeCodeForToken = async (code) => {
-  if (!codeVerifier) {
-    return {
-      success: false,
-      error: "Code verifier is missing. Please try again.",
-    }
-  }
-
+// Exchange authorization code for tokens
+export async function exchangeCodeForToken(code, request) {
   try {
-    const tokenResponse = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        grant_type: "authorization_code",
-        client_id: AUTH0_CLIENT_ID,
-        code_verifier: codeVerifier,
+    console.log("Exchanging code for token...")
+
+    const tokenResponse = await AuthSession.exchangeCodeAsync(
+      {
+        clientId: auth0ClientId,
         code,
-        redirect_uri: REDIRECT_URI,
+        redirectUri,
+        extraParams: {
+          code_verifier: request.codeVerifier,
+        },
+      },
+      discovery,
+    )
+
+    console.log("Token exchange successful")
+
+    // Store tokens securely
+    await storeAuthData(tokenResponse)
+
+    // Fetch user info
+    const userInfo = await fetchUserInfo(tokenResponse.accessToken)
+    await storeUserInfo(userInfo)
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error exchanging code for token:", error)
+    return { success: false, error: error.message || "Failed to exchange code for token" }
+  }
+}
+
+// Fetch user info from Auth0
+async function fetchUserInfo(accessToken) {
+  try {
+    const response = await fetch(`https://${auth0Domain}/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user info")
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching user info:", error)
+    throw error
+  }
+}
+
+// Store auth data securely
+async function storeAuthData(tokenResponse) {
+  try {
+    await SecureStore.setItemAsync(
+      AUTH_TOKEN_KEY,
+      JSON.stringify({
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken,
+        idToken: tokenResponse.idToken,
+        expiresIn: tokenResponse.expiresIn,
+        issuedAt: new Date().getTime(),
+      }),
+    )
+  } catch (error) {
+    console.error("Error storing auth data:", error)
+    throw error
+  }
+}
+
+// Store user info securely
+async function storeUserInfo(userInfo) {
+  try {
+    await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userInfo))
+  } catch (error) {
+    console.error("Error storing user info:", error)
+    throw error
+  }
+}
+
+// Set user role (expert or student)
+export async function setUserRole(role) {
+  try {
+    await SecureStore.setItemAsync(USER_ROLE_KEY, role)
+    return true
+  } catch (error) {
+    console.error("Error setting user role:", error)
+    return false
+  }
+}
+
+// Get user role
+export async function getUserRole() {
+  try {
+    return await SecureStore.getItemAsync(USER_ROLE_KEY)
+  } catch (error) {
+    console.error("Error getting user role:", error)
+    return null
+  }
+}
+
+// Check if user is authenticated
+export async function isAuthenticated() {
+  try {
+    const authDataStr = await SecureStore.getItemAsync(AUTH_TOKEN_KEY)
+    if (!authDataStr) return false
+
+    const authData = JSON.parse(authDataStr)
+    const expiryTime = authData.issuedAt + authData.expiresIn * 1000
+    const isExpired = new Date().getTime() > expiryTime
+
+    if (isExpired && authData.refreshToken) {
+      // Try to refresh the token
+      return await refreshTokens(authData.refreshToken)
+    }
+
+    return !isExpired
+  } catch (error) {
+    console.error("Error checking authentication:", error)
+    return false
+  }
+}
+
+// Refresh tokens
+async function refreshTokens(refreshToken) {
+  try {
+    const tokenResponse = await fetch(`https://${auth0Domain}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "refresh_token",
+        client_id: auth0ClientId,
+        refresh_token: refreshToken,
       }),
     })
+
+    if (!tokenResponse.ok) {
+      throw new Error("Failed to refresh token")
+    }
+
+    const tokenData = await tokenResponse.json()
+    await storeAuthData({
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token || refreshToken,
+      idToken: tokenData.id_token,
+      expiresIn: tokenData.expires_in,
+      issuedAt: new Date().getTime(),
+    })
+
+    return true
+  } catch (error) {
+    console.error("Error refreshing tokens:", error)
+    return false
+  }
+}
+
+// Get user info
+export async function getUserInfo() {
+  try {
+    const userInfoStr = await SecureStore.getItemAsync(AUTH_USER_KEY)
+    return userInfoStr ? JSON.parse(userInfoStr) : null
+  } catch (error) {
+    console.error("Error getting user info:", error)
+    return null
+  }
+}
+
+// Get access token
+export async function getAccessToken() {
+  try {
+    const authDataStr = await SecureStore.getItemAsync(AUTH_TOKEN_KEY)
+    if (!authDataStr) return null
+
+    const authData = JSON.parse(authDataStr)
+    return authData.accessToken
+  } catch (error) {
+    console.error("Error getting access token:", error)
+    return null
+  }
+}
+
+// Login with email/password
+export async function loginWithAuth0(email, password) {
+  try {
+    console.log("Logging in with email/password...")
+
+    const tokenResponse = await fetch(`https://${auth0Domain}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "password",
+        username: email,
+        password: password,
+        client_id: auth0ClientId,
+        audience: auth0Audience,
+        scope: auth0Scope,
+      }),
+    })
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json()
+      throw new Error(errorData.error_description || "Invalid credentials")
+    }
 
     const tokenData = await tokenResponse.json()
 
-    if (tokenData.error) {
-      console.error("Token exchange error:", tokenData)
-      return {
-        success: false,
-        error: tokenData.error_description || "Failed to exchange code for token",
-      }
-    }
-
-    // Store the tokens
-    await AsyncStorage.setItem("access_token", tokenData.access_token)
-    await AsyncStorage.setItem("id_token", tokenData.id_token)
-    if (tokenData.refresh_token) {
-      await AsyncStorage.setItem("refresh_token", tokenData.refresh_token)
-    }
-
-    return {
-      success: true,
-      tokens: tokenData,
-    }
-  } catch (error) {
-    console.error("Token exchange error:", error)
-    return {
-      success: false,
-      error: error.message,
-    }
-  }
-}
-
-// Register with Auth0 using email/password
-export const registerWithAuth0 = async (email, password) => {
-  try {
-    // For direct signup, use Auth0's Database Connection API
-    const signupResponse = await fetch(`https://${AUTH0_DOMAIN}/dbconnections/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        client_id: AUTH0_CLIENT_ID,
-        email,
-        password,
-        connection: "Username-Password-Authentication", // Use your Auth0 DB connection name
-      }),
+    // Store tokens
+    await storeAuthData({
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      idToken: tokenData.id_token,
+      expiresIn: tokenData.expires_in,
+      issuedAt: new Date().getTime(),
     })
 
-    const signupData = await signupResponse.json()
+    // Fetch and store user info
+    const userInfo = await fetchUserInfo(tokenData.access_token)
+    await storeUserInfo(userInfo)
 
-    if (signupData.error) {
-      console.error("Signup error:", signupData)
-      return {
-        success: false,
-        error: signupData.error_description || "Failed to sign up",
-      }
-    }
-
-    // After signup, get tokens using the password grant
-    // Note: This requires enabling the Password grant in Auth0
-    return await loginWithCredentials(email, password)
-  } catch (error) {
-    console.error("Registration error:", error)
-    return {
-      success: false,
-      error: error.message,
-    }
-  }
-}
-
-// Login with email/password credentials
-export const loginWithCredentials = async (email, password) => {
-  try {
-    // Use authorization code flow instead of password grant
-    const state = Math.random().toString(36).substring(2, 15)
-    const codeChallenge = await generatePKCE()
-
-    // Store state for verification
-    await AsyncStorage.setItem("auth_state", state)
-
-    // Create authorization URL
-    const authUrl =
-      `https://${AUTH0_DOMAIN}/authorize?` +
-      `client_id=${AUTH0_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent("openid profile email offline_access")}` +
-      `&state=${state}` +
-      `&code_challenge=${codeChallenge}` +
-      `&code_challenge_method=S256` +
-      `&audience=${encodeURIComponent(AUTH_AUDIENCE)}` +
-      `&login_hint=${encodeURIComponent(email)}`
-
-    // Launch browser for authentication
-    const result = await AuthSession.startAsync({
-      authUrl,
-    })
-
-    if (result.type === "success" && result.params.code) {
-      // Verify state to prevent CSRF
-      const storedState = await AsyncStorage.getItem("auth_state")
-      if (storedState !== result.params.state) {
-        return {
-          success: false,
-          error: "Invalid state parameter",
-        }
-      }
-
-      // Exchange code for token
-      return await exchangeCodeForToken(result.params.code)
-    } else {
-      return {
-        success: false,
-        error: "Authentication failed or was cancelled",
-      }
-    }
+    return { success: true }
   } catch (error) {
     console.error("Login error:", error)
-    return {
-      success: false,
-      error: error.message,
-    }
+    return { success: false, error: error.message || "Login failed" }
   }
 }
 
-// Set user role
-export const setUserRole = async (role) => {
+// Logout
+export async function logout() {
   try {
-    const accessToken = await AsyncStorage.getItem("access_token")
-    if (!accessToken) {
-      return {
-        success: false,
-        error: "No access token available",
-      }
-    }
+    // Clear stored tokens and user info
+    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY)
+    await SecureStore.deleteItemAsync(AUTH_USER_KEY)
+    await SecureStore.deleteItemAsync(USER_ROLE_KEY)
 
-    // Store the user role locally
-    await AsyncStorage.setItem("user_role", role)
+    // Construct the Auth0 logout URL
+    const logoutUrl = `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${encodeURIComponent(redirectUri)}`
 
-    // In a real implementation, you might want to update the user's
-    // role in Auth0 or your own backend using the Management API
+    // Open the logout URL in a browser
+    await startAsync({ authUrl: logoutUrl, returnUrl: redirectUri });
 
-    return {
-      success: true,
-    }
+    return true
   } catch (error) {
-    console.error("Set user role error:", error)
-    return {
-      success: false,
-      error: error.message,
-    }
+    console.error("Logout error:", error)
+    return false
   }
+}
+
+// Auth0 context provider for React components
+export function createAuthContext() {
+  const AuthContext = React.createContext({
+    isAuthenticated: false,
+    isLoading: true,
+    user: null,
+    login: async () => {},
+    loginWithGoogle: async () => {},
+    logout: async () => {},
+    userRole: null,
+  })
+
+  return AuthContext
 }

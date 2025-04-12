@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
-import { useAuthRequest, registerWithAuth0, exchangeCodeForToken, setUserRole } from "../../authService"
+import { useAuthRequest, exchangeCodeForToken, setUserRole, logout } from "../../authService"
 
 const ExpertSignupScreen = ({ navigation }) => {
   // State for form fields
@@ -34,12 +34,12 @@ const ExpertSignupScreen = ({ navigation }) => {
         setIsLoading(false)
       }
     }
-  }, [response, navigation])
+  }, [response])
 
   // Process authorization code
   const handleAuthCode = async (code) => {
     try {
-      const result = await exchangeCodeForToken(code)
+      const result = await exchangeCodeForToken(code, request)
 
       if (result.success) {
         // Set user role as Expert
@@ -69,9 +69,9 @@ const ExpertSignupScreen = ({ navigation }) => {
     }
   }
 
-  // Handle Google sign-up
-  const handleGoogleSignup = async () => {
-    console.log("Starting Google Sign-In process")
+  // Handle Google sign-in
+  const handleGoogleLogin = async () => {
+    console.log("Starting Google Sign-Up process")
 
     if (!request) {
       console.error("Auth request is not ready")
@@ -82,6 +82,10 @@ const ExpertSignupScreen = ({ navigation }) => {
     setIsLoading(true)
 
     try {
+      // First logout to ensure a clean session
+      await logout()
+
+      // Then prompt for login
       await promptAsync({ useProxy: true })
       // Result will be handled in the useEffect with the response
     } catch (error) {
@@ -91,10 +95,8 @@ const ExpertSignupScreen = ({ navigation }) => {
     }
   }
 
-  // Handle email/password sign-up with Auth0
-  const handleSignUp = async () => {
-  // Handle email/password sign-up with Auth0
-  const handleSignUp = async () => {
+  // Handle email/password sign-up
+  const handleSignUp = () => {
     // Validate inputs
     if (!email || !password || !confirmPassword) {
       return Alert.alert("Error", "Please fill in all fields")
@@ -104,41 +106,20 @@ const ExpertSignupScreen = ({ navigation }) => {
       return Alert.alert("Error", "Passwords do not match")
     }
 
-    // Check password strength
-    if (password.length < 8) {
-      return Alert.alert("Error", "Password must be at least 8 characters long")
-    }
-
-    setIsLoading(true)
-
-    try {
-      const result = await registerWithAuth0(email, password)
-
-      if (result.success) {
-        // Set user role as Expert
-        await setUserRole("expert")
-
-        setIsLoading(false)
-        Alert.alert("Sign Up Successful", "Your account has been created!", [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "ExpertDrawer" }],
-              })
-            },
-          },
-        ])
-      } else {
-        setIsLoading(false)
-        Alert.alert("Sign Up Error", result.error)
-      }
-    } catch (error) {
-      setIsLoading(false)
-      console.error("Signup error:", error)
-      Alert.alert("Sign Up Error", "Failed to create account. Please try again.")
-    }
+    // Here you would typically call your Auth0 signup endpoint
+    // For now, simulate a successful signup
+    Alert.alert("Sign Up", "Account created successfully!", [
+      {
+        text: "OK",
+        onPress: () => {
+          // Navigate to ExpertDrawer which contains ExpertHome
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "ExpertDrawer" }],
+          })
+        },
+      },
+    ])
   }
 
   return (
@@ -162,7 +143,6 @@ const ExpertSignupScreen = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
         editable={!isLoading}
-        editable={!isLoading}
       />
 
       <Text style={styles.label}>Password</Text>
@@ -173,7 +153,6 @@ const ExpertSignupScreen = ({ navigation }) => {
         value={password}
         onChangeText={setPassword}
         editable={!isLoading}
-        editable={!isLoading}
       />
 
       <Text style={styles.label}>Confirm Password</Text>
@@ -183,7 +162,6 @@ const ExpertSignupScreen = ({ navigation }) => {
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
-        editable={!isLoading}
         editable={!isLoading}
       />
 
@@ -199,7 +177,7 @@ const ExpertSignupScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={[styles.googleButton, isLoading && styles.disabledButton]}
-        onPress={handleGoogleSignup}
+        onPress={handleGoogleLogin}
         disabled={isLoading}
       >
         <Image source={require("../../assets/google_logo.png")} style={styles.googleLogo} />

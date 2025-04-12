@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput
+  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
 const SpecificDoubtScreen = ({ route }) => {
   const { doubt } = route.params;
@@ -13,6 +16,25 @@ const SpecificDoubtScreen = ({ route }) => {
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingDate, setMeetingDate] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const onDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(Platform.OS === 'ios');
+    
+    // Format the date as YYYY-MM-DD
+    const formattedDate = currentDate.toISOString().split('T')[0];
+    setMeetingDate(formattedDate);
+  };
+  const onTimeChange = (event, selectedTime) => {
+    const currentTime = selectedTime || new Date();
+    setShowTimePicker(Platform.OS === 'ios');
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    setMeetingTime(`${hours}:${minutes}`);
+  };
+  
 
   const handleOpenCalendar = () => {
     if (!meetingTitle || !meetingDate || !meetingTime) {
@@ -22,12 +44,15 @@ const SpecificDoubtScreen = ({ route }) => {
 
     const formattedDate = meetingDate.replace(/-/g, ''); // YYYYMMDD
     const formattedTime = meetingTime.replace(/:/g, ''); // HHMMSS
-    const startDateTime = `${formattedDate}T${formattedTime}00Z`;
-    const endDateTime = `${formattedDate}T${formattedTime}00Z`; // Adjust for duration if needed
+    const startDateTime = `${formattedDate}T${formattedTime}00`;
+    const endDateTime = `${formattedDate}T${formattedTime + 10000}00`;
+    const timezone = "Asia/Kolkata"; 
+    const guests = "someone@example.com,another@example.com";
 
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}`;
+const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}&ctz=${timezone}&add=${guests}`;
+    // const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=&dates=${}/${endDateTime}`;
     Linking.openURL(calendarUrl);
-
+    console.log('Calendar URL:', calendarUrl); // Debugging line
     setIsModalVisible(false);
   };
 
@@ -47,10 +72,10 @@ const SpecificDoubtScreen = ({ route }) => {
       <Text style={styles.detail}>{doubt.title}</Text>
       <Text style={styles.Text}>Domain:</Text>
       <Text style={styles.detail}>{doubt.domain}</Text>
-      <Text style={styles.Text}>Timeslot:</Text>
+      {/* <Text style={styles.Text}>Timeslot:</Text>
       <Text style={styles.detail}>{doubt.timeslot}</Text>
       <Text style={styles.Text}>Charges:</Text>
-      <Text style={styles.detail}>{doubt.charges}</Text>
+      <Text style={styles.detail}>{doubt.charges}</Text> */}
       <Text style={styles.Text}>Description of the doubt:</Text>
       <Text style={styles.detail}>{doubt.description || 'No description available.'}</Text>
       <Text style={styles.Text}>Doubt Photo:</Text>
@@ -82,21 +107,54 @@ const SpecificDoubtScreen = ({ route }) => {
               onChangeText={setMeetingTitle}
             />
 
-            <TextInput
-              placeholder="Date (YYYY-MM-DD)"
-              style={styles.input}
-              value={meetingDate}
-              onChangeText={setMeetingDate}
-              keyboardType="numeric"
-            />
+            <View style={styles.dateInputContainer}>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <TextInput
+                  placeholder="Date (YYYY-MM-DD)"
+                  style={styles.input}
+                  value={meetingDate}
+                  editable={false} // Make it non-editable
+                />
+                <Ionicons name="calendar" size={24} color="#457B9D" style={styles.calendarIcon} />
+              </TouchableOpacity>
+              
+              {showDatePicker && (
+                <DateTimePicker
+                  value={meetingDate ? new Date(meetingDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
 
-            <TextInput
-              placeholder="Time (HH:MM)"
-              style={styles.input}
-              value={meetingTime}
-              onChangeText={setMeetingTime}
-              keyboardType="numeric"
-            />
+            <View style={styles.dateInputContainer}>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowTimePicker(true)}
+              >
+                <TextInput
+                  placeholder="Time (HH:MM)"
+                  style={styles.input}
+                  value={meetingTime}
+                  editable={false}
+                />
+                <Ionicons name="time" size={24} color="#457B9D" style={styles.calendarIcon} />
+              </TouchableOpacity>
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={new Date()}
+                  mode="time"
+                  display="default"
+                  onChange={onTimeChange}
+                />
+              )}
+            </View>
+
 
             <View style={styles.modalButtonRow}>
               <TouchableOpacity style={styles.modalButton} onPress={handleOpenCalendar}>
@@ -118,6 +176,27 @@ const SpecificDoubtScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  dateInputContainer: {
+    width: '100%',
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    borderColor: '#F1FAEE',
+    borderWidth: 1,
+    marginBottom: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1FAEE',
+    paddingHorizontal: 8,
+  },
+  calendarIcon: {
+    position: 'absolute',
+    right: 12,
+  },
+  input: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
