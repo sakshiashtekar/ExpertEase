@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Platform
@@ -8,16 +9,44 @@ import * as Linking from 'expo-linking';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
+import { Picker } from '@react-native-picker/picker';
+import * as MailComposer from 'expo-mail-composer';
+
 const SpecificDoubtScreen = ({ route }) => {
+
+
+
   const { doubt } = route.params;
   const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingDate, setMeetingDate] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedCharge, setSelectedCharge] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [customCharge, setCustomCharge] = useState('');
+
+  const handleScheduleMeet = () => {
+    console.log('Meeting scheduled for:', doubt.title);
+    console.log('Charge:', selectedCharge || customCharge);
+    console.log('Time:', selectedTime);
+    setIsModalVisible(false);
+  
+    // Trigger email after 30 seconds
+    setTimeout(() => {
+      MailComposer.composeAsync({
+        recipients: ['sakshiashtekar245@gmail.com'],
+        subject: `Reminder: ${doubt.title}`,
+        body: `This is a reminder for your meeting.\n\nTitle: ${doubt.title}\nCharge: ₹${selectedCharge || customCharge}\nTime: ${selectedTime}`,
+      });
+      console.log("Email composer triggered after 30 seconds");
+    }, 3000);
+  };
+
 
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || new Date();
@@ -208,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backButtonText: {
-    fontSize: 25,
+    fontSize: 45,
     color: '#000',
     fontWeight: 'bold',
   },

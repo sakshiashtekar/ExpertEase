@@ -1,10 +1,11 @@
-"use client"
 
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/FontAwesome"
-import * as ImagePicker from "expo-image-picker"
+"use client"
+import React, { useState, useEffect } from 'react'; 
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../supabase'; // Ensure this path is correct for your project
 
 const PostDoubtScreen = () => {
   const navigation = useNavigation()
@@ -18,6 +19,7 @@ const PostDoubtScreen = () => {
   useEffect(() => {
     setIsFormValid(email.trim() !== "" && title.trim() !== "" && description.trim() !== "")
   }, [email, title, description])
+
 
   // Request media library permission
   useEffect(() => {
@@ -37,6 +39,7 @@ const PostDoubtScreen = () => {
       console.log("Opening image picker...")
 
       const result = await ImagePicker.launchImageLibraryAsync({
+
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
@@ -52,10 +55,12 @@ const PostDoubtScreen = () => {
       }
     } catch (error) {
       console.error("Error picking image:", error)
+
     }
   }
 
   const handleGoBack = () => {
+
     navigation.navigate("StudentDrawer", { screen: "StudentHome" })
   }
 
@@ -136,6 +141,7 @@ const PostDoubtScreen = () => {
   )
 }
 
+
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
@@ -153,9 +159,11 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButtonText: {
+
     fontSize: 25,
     color: "#000",
     fontWeight: "bold",
+
   },
   title: {
     fontSize: 25,
@@ -175,6 +183,7 @@ const styles = StyleSheet.create({
   },
   descriptionInput: {
     height: 200,
+
     textAlignVertical: "top",
     paddingTop: 15,
   },
@@ -220,6 +229,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
+
 })
 
 export default PostDoubtScreen
+

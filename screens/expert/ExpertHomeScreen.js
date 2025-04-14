@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Alert, } from 'react-native';
+
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Alert, Image } from 'react-native';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import * as AuthSession from 'expo-auth-session';
@@ -96,6 +98,18 @@ const ExpertHomeScreen = () => {
       {/* <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity> */}
+
+      {/* Chatbot logo at the bottom right */}
+      <TouchableOpacity
+        style={styles.chatbotLogo}
+        onPress={() => navigation.navigate('Chatbot')}
+      >
+        <Image
+          source={require('../../assets/chatbot-logo.png')} // Replace with your logo path
+          style={styles.chatbotImage}
+        />
+      </TouchableOpacity>
+
     </View>
   );
 };
@@ -154,6 +168,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
   },
+
   logoutButton: {
     backgroundColor: '#E63946',
     padding: 10,
@@ -164,6 +179,21 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+
+  chatbotLogo: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#ffff', // Customize background color
+    padding: 10,
+    borderRadius: 50,
+    elevation: 5,
+  },
+  chatbotImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+
   },
 });
 

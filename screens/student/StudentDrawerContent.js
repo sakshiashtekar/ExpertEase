@@ -24,6 +24,9 @@ const StudentDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('ChatbotScreen')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => props.navigation.navigate('Feedback')}>
+        <Text style={styles.drawerItem}>Feedback</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
       <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
