@@ -1,177 +1,126 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import * as AuthSession from 'expo-auth-session';
-import { auth0Domain, auth0ClientId } from '../../authService';
+"use client"
 
-const redirectUri = AuthSession.makeRedirectUri({
-  useProxy: true,
-});
+import { useState, useEffect } from "react"
+import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
+import { useAuthRequest, exchangeCodeForToken, setUserRole, logout } from "../../authService"
 
-// Logging redirect URI for debugging
-console.log("REDIRECT URI:", redirectUri);
+const ExpertSignupScreen = ({ navigation }) => {
+  // State for form fields
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
-const StudentSignupScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  // Use our centralized Auth0 request hook
+  const [request, response, promptAsync] = useAuthRequest()
 
-  // Setup Auth0 discovery
-  const discovery = {
-    authorizationEndpoint: `https://${auth0Domain}/authorize`,
-    tokenEndpoint: `https://${auth0Domain}/oauth/token`,
-    revocationEndpoint: `https://${auth0Domain}/oauth/revoke`,
-  };
-
-  // Setup Auth0 request with minimal configuration to reduce potential issues
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: auth0ClientId,
-      redirectUri,
-      responseType: 'code',
-      scopes: ['openid', 'profile', 'email'],
-      // Only add this back if your Auth0 setup specifically requires it
-      extraParams: {
-        // audience: `https://${auth0Domain}/userinfo`,
-        connection: 'google-oauth2',
-      },
-    },
-    discovery
-  );
-
-  // Enhanced Auth0 response handling with better error logging
+  // Handle Auth0 response
   useEffect(() => {
     if (response) {
-      console.log("Auth response type:", response.type);
-      console.log("Auth response params:", response.params);
-      
-      if (response.type === 'success') {
-        const { code } = response.params;
-        console.log("Authorization Code received");
-        
-        setIsLoading(false);
+      console.log("Auth response type:", response.type)
+
+      if (response.type === "success") {
+        const { code } = response.params
+        handleAuthCode(code)
+      } else if (response.type === "error") {
+        setIsLoading(false)
+        console.error("Auth error:", response.error)
+
         Alert.alert(
-          "Login Success", 
-          "You've successfully signed in with Google",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Navigate to StudentDrawer which contains StudentHome
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'StudentDrawer' }],
-                });
-              }
-            }
-          ]
-        );
-      } else if (response.type === 'error') {
-        setIsLoading(false);
-        console.error("Auth error details:", {
-          error: response.error,
-          errorDescription: response.params?.error_description,
-          errorUri: response.params?.error_uri
-        });
-        
-        Alert.alert(
-          "Authentication Error", 
-          response.params?.error_description || 
-          "Failed to authenticate with Google. Please try again later."
-        );
+          "Authentication Error",
+          response.params?.error_description || "Failed to authenticate with Google. Please try again.",
+        )
       } else {
-        setIsLoading(false);
-        console.log("Auth response not handled:", response.type);
+        setIsLoading(false)
       }
     }
-  }, [response, navigation]);
+  }, [response])
 
-  // Google sign-in with enhanced error handling
+  // Process authorization code
+  const handleAuthCode = async (code) => {
+    try {
+      const result = await exchangeCodeForToken(code, request)
+
+      if (result.success) {
+        // Set user role as Expert
+        await setUserRole("expert")
+
+        setIsLoading(false)
+        Alert.alert("Signup Success", "You've successfully signed up with Google", [
+          {
+            text: "OK",
+            onPress: () => {
+              // Navigate to ExpertDrawer which contains ExpertHome
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "StudentDrawer" }],
+              })
+            },
+          },
+        ])
+      } else {
+        setIsLoading(false)
+        Alert.alert("Signup Error", result.error)
+      }
+    } catch (error) {
+      setIsLoading(false)
+      console.error("Error processing auth code:", error)
+      Alert.alert("Authentication Error", "Failed to complete authentication")
+    }
+  }
+
+  // Handle Google sign-in
   const handleGoogleLogin = async () => {
-    console.log("Starting Google Sign-In process");
-    
-    if (!request) {
-      console.error("Auth request is not ready");
-      Alert.alert("Error", "Authentication service is not ready. Please try again later.");
-      return;
-    }
-    
-    console.log("Auth request configuration:", {
-      url: request.url,
-      codeChallenge: request.codeChallenge ? '[present]' : '[not present]',
-      state: request.state ? '[present]' : '[not present]',
-    });
-    
-    setIsLoading(true);
-    
-    try {
-      const result = await promptAsync({ useProxy: true });
-      console.log("promptAsync completed with result type:", result.type);
-      
-      // Note: We don't need to handle success here as it's handled in the useEffect
-      if (result.type !== 'success') {
-        setIsLoading(false);
-        console.log("promptAsync did not succeed:", result);
-      }
-    } catch (error) {
-      setIsLoading(false);
-      console.error("Google login error:", error);
-      console.error("Error stack:", error.stack);
-      Alert.alert("Error", `Authentication failed: ${error.message}`);
-    }
-  };
+    console.log("Starting Google Sign-Up process")
 
-  // Email/password sign-up with validation
-  const handleSignUp = async () => {
-    // Input validation
-    if (!email || !password || !confirmPassword) {
-      return Alert.alert("Error", "Please fill in all fields");
+    if (!request) {
+      console.error("Auth request is not ready")
+      Alert.alert("Error", "Authentication service is not ready. Please try again later.")
+      return
     }
-    
-    if (password !== confirmPassword) {
-      return Alert.alert("Error", "Passwords do not match");
-    }
-    
-    if (password.length < 8) {
-      return Alert.alert("Error", "Password must be at least 8 characters");
-    }
-    
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return Alert.alert("Error", "Please enter a valid email address");
-    }
-    
-    setIsLoading(true);
-    
+
+    setIsLoading(true)
+
     try {
-      // Here you would call your Auth0 signup endpoint or other authentication service
-      // For now, simulate a successful signup with a delay
-      setTimeout(() => {
-        setIsLoading(false);
-        Alert.alert(
-          "Sign Up", 
-          "Account created successfully!",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Reset navigation to StudentDrawer
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'StudentDrawer' }],
-                });
-              }
-            }
-          ]
-        );
-      }, 1000);
+      // First logout to ensure a clean session
+      await logout()
+
+      // Then prompt for login
+      await promptAsync({ useProxy: true })
+      // Result will be handled in the useEffect with the response
     } catch (error) {
-      setIsLoading(false);
-      console.error("Sign up error:", error);
-      Alert.alert("Error", "Failed to create account. Please try again.");
+      setIsLoading(false)
+      console.error("Google signup error:", error)
+      Alert.alert("Error", `Authentication failed: ${error.message}`)
     }
-  };
+  }
+
+  // Handle email/password sign-up
+  const handleSignUp = () => {
+    // Validate inputs
+    if (!email || !password || !confirmPassword) {
+      return Alert.alert("Error", "Please fill in all fields")
+    }
+
+    if (password !== confirmPassword) {
+      return Alert.alert("Error", "Passwords do not match")
+    }
+
+    // Here you would typically call your Auth0 signup endpoint
+    // For now, simulate a successful signup
+    Alert.alert("Sign Up", "Account created successfully!", [
+      {
+        text: "OK",
+        onPress: () => {
+          // Navigate to ExpertDrawer which contains ExpertHome
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "StudentDrawer" }],
+          })
+        },
+      },
+    ])
+  }
 
   return (
     <View style={styles.container}>
@@ -180,17 +129,15 @@ const StudentSignupScreen = ({ navigation }) => {
           <ActivityIndicator size="large" color="#1D3557" />
         </View>
       )}
-      
+
       <Text style={styles.title}>Create Account</Text>
 
-      <Text style={styles.signInText4}>
-        Fill your information below or SignIn with your Google account
-      </Text>
+      <Text style={styles.signInText4}>Fill your information below or SignIn with your Google account</Text>
 
       <Text style={styles.label}>Email</Text>
-      <TextInput 
-        placeholder="example@gmail.com" 
-        style={styles.input} 
+      <TextInput
+        placeholder="example@gmail.com"
+        style={styles.input}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -199,27 +146,27 @@ const StudentSignupScreen = ({ navigation }) => {
       />
 
       <Text style={styles.label}>Password</Text>
-      <TextInput 
-        placeholder="**********" 
-        style={styles.input} 
-        secureTextEntry 
+      <TextInput
+        placeholder="**********"
+        style={styles.input}
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
         editable={!isLoading}
       />
 
       <Text style={styles.label}>Confirm Password</Text>
-      <TextInput 
-        placeholder="**********" 
-        style={styles.input} 
-        secureTextEntry 
+      <TextInput
+        placeholder="**********"
+        style={styles.input}
+        secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         editable={!isLoading}
       />
 
-      <TouchableOpacity 
-        style={[styles.button, isLoading && styles.disabledButton]} 
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.disabledButton]}
         onPress={handleSignUp}
         disabled={isLoading}
       >
@@ -228,96 +175,90 @@ const StudentSignupScreen = ({ navigation }) => {
 
       <Text style={styles.signInText3}>or sign up with</Text>
 
-      <TouchableOpacity 
-        style={[styles.googleButton, isLoading && styles.disabledButton]} 
+      <TouchableOpacity
+        style={[styles.googleButton, isLoading && styles.disabledButton]}
         onPress={handleGoogleLogin}
         disabled={isLoading}
       >
-        <Image
-          source={require('../../assets/google_logo.png')}
-          style={styles.googleLogo}
-        />
+        <Image source={require("../../assets/google_logo.png")} style={styles.googleLogo} />
         <Text style={styles.googleButtonText}>Sign up with Google</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('StudentLogin')}
-        disabled={isLoading}
-      >
+      <TouchableOpacity onPress={() => navigation.navigate("ExpertLogin")} disabled={isLoading}>
         <Text style={styles.signInText}>
           Already have an account?
-          <Text style={styles.signInText2}>  Log In</Text>
+          <Text style={styles.signInText2}> Log In</Text>
         </Text>
       </TouchableOpacity>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    justifyContent: "center",
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
   title: {
     fontSize: 30,
     marginBottom: -15,
-    textAlign: 'center',
-    color: '#1D3557',
-    fontWeight: '900'
+    textAlign: "center",
+    color: "#1D3557",
+    fontWeight: "900",
   },
   label: {
     fontSize: 15,
     marginBottom: 2,
     marginLeft: 5,
-    fontWeight: 'bold'
+    fontWeight: "bold",
   },
   input: {
     height: 50,
-    borderColor: '#F1FAEE',
+    borderColor: "#F1FAEE",
     borderWidth: 1,
     marginBottom: 12,
     paddingLeft: 8,
     borderRadius: 10,
-    backgroundColor: '#F1FAEE'
+    backgroundColor: "#F1FAEE",
   },
   button: {
-    backgroundColor: '#1D3557',
+    backgroundColor: "#1D3557",
     padding: 15,
     borderRadius: 30,
     marginBottom: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   disabledButton: {
     opacity: 0.7,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   googleButton: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
+    backgroundColor: "#fff",
+    borderColor: "#ccc",
     borderWidth: 3,
     padding: 15,
     borderRadius: 30,
     marginBottom: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   googleLogo: {
     width: 24,
@@ -325,33 +266,33 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   googleButtonText: {
-    color: '#1D3557',
+    color: "#1D3557",
     fontSize: 16,
-    fontWeight: 'bold'
+    fontWeight: "bold",
   },
   signInText: {
     marginTop: 20,
-    color: '#000',
-    textAlign: 'center',
-    fontWeight: 'bold'
+    color: "#000",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   signInText2: {
-    color: '#457B9D',
-    paddingLeft: 100
+    color: "#457B9D",
+    paddingLeft: 100,
   },
   signInText3: {
-    color: '#457B9D',
-    fontWeight: 'bold',
+    color: "#457B9D",
+    fontWeight: "bold",
     paddingStart: 150,
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   signInText4: {
-    color: '#457B9D',
-    fontWeight: 'bold',
+    color: "#457B9D",
+    fontWeight: "bold",
     paddingStart: 0,
-    textAlign: 'center',
-    paddingVertical: 30
-  }
-});
+    textAlign: "center",
+    paddingVertical: 30,
+  },
+})
 
-export default StudentSignupScreen;
+export default ExpertSignupScreen
