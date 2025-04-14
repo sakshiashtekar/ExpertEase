@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Alert, Image } from 'react-native';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { supabase } from '../supabase';
+
+// Replace these with your actual Auth0 values
+const auth0ClientId = 'u5hqWLFwHEW2aUFfY1G214ZUnlHVMUPD';
+const auth0Domain = 'https://dev-w3p1twys85rx8ekx.us.auth0.com';
 
 const ExpertHomeScreen = () => {
   const navigation = useNavigation();
@@ -26,6 +34,28 @@ const ExpertHomeScreen = () => {
     navigation.navigate('SpecificDoubt', { doubt });
   };
 
+  const handleLogout = async () => {
+    try {
+      const returnTo = encodeURIComponent(AuthSession.makeRedirectUri());
+
+      const logoutUrl = `${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${returnTo}`;
+
+      // Open the Auth0 logout URL
+      await AuthSession.startAsync({
+        authUrl: logoutUrl,
+      });
+
+      // Navigate back to signup screen after logout
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ExpertSignupScreen' }],
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+      Alert.alert('Logout Error', 'Something went wrong during logout.');
+    }
+  };
+
   const renderDoubtCard = ({ item, index }) => {
     const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
 
@@ -44,9 +74,10 @@ const ExpertHomeScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header with hamburger and search */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
-          <Icon name="bars" size={38} color="#E63946" />
+          <Icon name="bars" size={28} color="#E63946" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
@@ -63,6 +94,11 @@ const ExpertHomeScreen = () => {
         ListEmptyComponent={<Text>No doubts available.</Text>}
       />
 
+      {/* Logout Button at Bottom (Optional for now) */}
+      {/* <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity> */}
+
       {/* Chatbot logo at the bottom right */}
       <TouchableOpacity
         style={styles.chatbotLogo}
@@ -73,6 +109,7 @@ const ExpertHomeScreen = () => {
           style={styles.chatbotImage}
         />
       </TouchableOpacity>
+
     </View>
   );
 };
@@ -80,7 +117,8 @@ const ExpertHomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 40,
+    paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
   header: {
@@ -109,7 +147,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    borderWidth: 0,
   },
   title: {
     fontSize: 25,
@@ -131,6 +168,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
   },
+
+  logoutButton: {
+    backgroundColor: '#E63946',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+
   chatbotLogo: {
     position: 'absolute',
     bottom: 20,
@@ -144,6 +193,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 50,
+
   },
 });
 

@@ -1,11 +1,31 @@
-import React, { useState } from 'react';  
-import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput } from 'react-native';
+
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Platform
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+
 import { Picker } from '@react-native-picker/picker';
 import * as MailComposer from 'expo-mail-composer';
-const SpecificDoubtScreen = ({ route, navigation }) => {
+
+const SpecificDoubtScreen = ({ route }) => {
+
+
+
   const { doubt } = route.params;
+  const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingTime, setMeetingTime] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedCharge, setSelectedCharge] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [customCharge, setCustomCharge] = useState('');
@@ -27,21 +47,51 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
     }, 3000);
   };
 
-  const handleGoBack = () => {
-    navigation.navigate('ExpertDrawer', { screen: 'ExpertHome' });
-  };  
+
+  const onDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(Platform.OS === 'ios');
+    
+    // Format the date as YYYY-MM-DD
+    const formattedDate = currentDate.toISOString().split('T')[0];
+    setMeetingDate(formattedDate);
+  };
+  const onTimeChange = (event, selectedTime) => {
+    const currentTime = selectedTime || new Date();
+    setShowTimePicker(Platform.OS === 'ios');
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    setMeetingTime(`${hours}:${minutes}`);
+  };
   
-  const handleChargeChange = (itemValue) => {
-    setSelectedCharge(itemValue);
-    setCustomCharge(''); 
+
+  const handleOpenCalendar = () => {
+    if (!meetingTitle || !meetingDate || !meetingTime) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const formattedDate = meetingDate.replace(/-/g, ''); // YYYYMMDD
+    const formattedTime = meetingTime.replace(/:/g, ''); // HHMMSS
+    const startDateTime = `${formattedDate}T${formattedTime}00`;
+    const endDateTime = `${formattedDate}T${formattedTime + 10000}00`;
+    const timezone = "Asia/Kolkata"; 
+    const guests = "someone@example.com,another@example.com";
+
+const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}&ctz=${timezone}&add=${guests}`;
+    // const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=&dates=${}/${endDateTime}`;
+    Linking.openURL(calendarUrl);
+    console.log('Calendar URL:', calendarUrl); // Debugging line
+    setIsModalVisible(false);
   };
 
-  const handleTimeChange = (itemValue) => {
-    setSelectedTime(itemValue);
+  const handleGoBack = () => {
+    navigation.navigate('ExpertDrawer', { screen: 'ExpertHome' });
   };
 
   return (
     <View style={styles.container}>
+      {/* Back Button only */}
       <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
@@ -51,7 +101,11 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
       <Text style={styles.detail}>{doubt.title}</Text>
       <Text style={styles.Text}>Domain:</Text>
       <Text style={styles.detail}>{doubt.domain}</Text>
-      <Text style={styles.Text}>Description of the doubt: </Text>
+      {/* <Text style={styles.Text}>Timeslot:</Text>
+      <Text style={styles.detail}>{doubt.timeslot}</Text>
+      <Text style={styles.Text}>Charges:</Text>
+      <Text style={styles.detail}>{doubt.charges}</Text> */}
+      <Text style={styles.Text}>Description of the doubt:</Text>
       <Text style={styles.detail}>{doubt.description || 'No description available.'}</Text>
       <Text style={styles.Text}>Doubt Photo:</Text>
       <Text style={styles.detail}>{doubt.doubt_photo}</Text>
@@ -64,7 +118,7 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
         <Text style={styles.buttonText}>Schedule a Meet</Text>
       </TouchableOpacity>
 
-      {/* Modal for selecting charge */}
+      {/* Modal for entering meeting info */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -73,48 +127,73 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Charges</Text>
+            <Text style={styles.modalTitle}>Enter Meeting Details</Text>
 
-            {/* Charge Picker */}
-            <Picker
-              selectedValue={selectedCharge}
-              onValueChange={handleChargeChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select a Charge" value="" />
-              <Picker.Item label="50" value="50" />
-              <Picker.Item label="75" value="75" />
-              <Picker.Item label="100" value="100" />
-            </Picker>
+            <TextInput
+              placeholder="Meeting Title"
+              style={styles.input}
+              value={meetingTitle}
+              onChangeText={setMeetingTitle}
+            />
 
-            {/* Time Picker */}
-            <Picker
-              selectedValue={selectedTime}
-              onValueChange={handleTimeChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select a Time" value="" />
-              <Picker.Item label="5pm" value="5pm" />
-              <Picker.Item label="7pm" value="7pm" />
-              <Picker.Item label="10pm" value="10pm" />
-            </Picker>
+            <View style={styles.dateInputContainer}>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <TextInput
+                  placeholder="Date (YYYY-MM-DD)"
+                  style={styles.input}
+                  value={meetingDate}
+                  editable={false} // Make it non-editable
+                />
+                <Ionicons name="calendar" size={24} color="#457B9D" style={styles.calendarIcon} />
+              </TouchableOpacity>
+              
+              {showDatePicker && (
+                <DateTimePicker
+                  value={meetingDate ? new Date(meetingDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
+
+            <View style={styles.dateInputContainer}>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowTimePicker(true)}
+              >
+                <TextInput
+                  placeholder="Time (HH:MM)"
+                  style={styles.input}
+                  value={meetingTime}
+                  editable={false}
+                />
+                <Ionicons name="time" size={24} color="#457B9D" style={styles.calendarIcon} />
+              </TouchableOpacity>
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={new Date()}
+                  mode="time"
+                  display="default"
+                  onChange={onTimeChange}
+                />
+              )}
+            </View>
+
 
             <View style={styles.modalButtonRow}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={handleScheduleMeet}
-                disabled={!selectedCharge && !customCharge || !selectedTime}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={handleOpenCalendar}>
                 <View style={styles.modalButtonRowInner}>
                   <Image source={require('../../assets/google_logo.png')} style={styles.logo} />
                   <Text style={styles.modalButtonText}>Schedule</Text>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setIsModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -126,14 +205,35 @@ const SpecificDoubtScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  dateInputContainer: {
+    width: '100%',
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    borderColor: '#F1FAEE',
+    borderWidth: 1,
+    marginBottom: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1FAEE',
+    paddingHorizontal: 8,
+  },
+  calendarIcon: {
+    position: 'absolute',
+    right: 12,
+  },
+  input: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    marginTop: 25,
-    marginLeft: 10,
+    marginTop: 35,
+    marginLeft: 20,
     borderRadius: 10,
   },
   backButtonText: {
@@ -164,7 +264,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     paddingVertical: 10,
-    marginTop: 20,
+    marginTop: 40,
     backgroundColor: '#1D3557',
     borderRadius: 30,
     alignItems: 'center',
@@ -200,11 +300,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
   },
-  picker: {
-    width: '100%',
-    height: 60,
-    marginBottom: 15,
-  },
   input: {
     width: '100%',
     height: 40,
@@ -220,8 +315,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 20,
     marginBottom: 15,
-    marginRight: 5, 
-    flex: 1, 
+    marginRight: 5,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

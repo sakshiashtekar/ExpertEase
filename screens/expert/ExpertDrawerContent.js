@@ -3,7 +3,50 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import logo from '../../assets/expertease_logo.png'; 
 
+import { auth0Domain, auth0ClientId } from '../../authContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import * as WebBrowser from 'expo-web-browser';
+import * as SecureStore from 'expo-secure-store';
+
+const clearSession = async () => {
+  await SecureStore.deleteItemAsync('accessToken');
+  await SecureStore.deleteItemAsync('idToken');
+  await SecureStore.deleteItemAsync('refreshToken');
+};
+export const handleLogout = async () => {
+  const logoutUrl = `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}}`;
+  await clearSession();
+  await WebBrowser.openBrowserAsync(logoutUrl);
+};
+
 const ExpertDrawerContent = (props) => {
+  // const handleLogout = async () => {
+  //   try {
+  //     // Clear all tokens from storage
+  //     await AsyncStorage.removeItem("access_token");
+  //     await AsyncStorage.removeItem("id_token");
+  //     await AsyncStorage.removeItem("refresh_token");
+  //     await AsyncStorage.removeItem("user_role");
+  //     await AsyncStorage.removeItem("auth_state");
+      
+  //     console.log("Logged out successfully");
+      
+  //     // Use the navigation hook
+  //     props.navigation.reset({
+  //       index: 0,
+  //       routes: [{ name: 'Welcome' }],
+  //     });
+  //   } catch (error) {
+  //     console.error("Logout error:", error);
+  //     props.navigation.reset({
+  //       index: 0,
+  //       routes: [{ name: 'Welcome' }],
+  //     });
+  //   }
+  // };
+  
+  
   return (
     <View style={styles.drawerContent}>
       <View style={styles.header}>
@@ -23,7 +66,7 @@ const ExpertDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('Feedback')}>
         <Text style={styles.drawerItem}>Feedback</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
+      <TouchableOpacity onPress={handleLogout }>
       <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
           <Text style={styles.logout}>Logout</Text>
