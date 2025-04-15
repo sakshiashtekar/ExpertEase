@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: '600',
-    marginBottom: 20,
+    marginBottom: 40,
     textAlign: 'center',
   },
   input: {
@@ -136,15 +136,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   button: {
-    backgroundColor: '#3b82f6',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: "#1D3557",
+    paddingHorizontal: 70,
+    paddingVertical: 10,
+    borderRadius: 30,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "900",
+    textAlign: 'center',
   },
 });
