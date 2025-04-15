@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-
+  },
   chatbotLogo: {
     position: 'absolute',
     bottom: 20,
