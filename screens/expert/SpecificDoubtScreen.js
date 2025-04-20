@@ -9,7 +9,6 @@ import * as Linking from 'expo-linking';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Picker } from '@react-native-picker/picker';
 import * as MailComposer from 'expo-mail-composer';
 
 const SpecificDoubtScreen = ({ route }) => {

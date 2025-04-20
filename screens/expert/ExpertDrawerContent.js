@@ -4,7 +4,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import logo from '../../assets/expertease_logo.png'; 
 
 import { auth0Domain, auth0ClientId } from '../../authContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
