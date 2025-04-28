@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native"
 import { useAuthRequest, exchangeCodeForToken, setUserRole, logout } from "../../authService"
 
-const ExpertSignupScreen = ({ navigation }) => {
+const StudentSignupScreen = ({ navigation }) => {
   // State for form fields
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -184,7 +184,7 @@ const ExpertSignupScreen = ({ navigation }) => {
         <Text style={styles.googleButtonText}>Sign up with Google</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("ExpertLogin")} disabled={isLoading}>
+      <TouchableOpacity onPress={() => navigation.navigate("StudentLogin")} disabled={isLoading}>
         <Text style={styles.signInText}>
           Already have an account?
           <Text style={styles.signInText2}> Log In</Text>
@@ -293,6 +293,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: 30,
   },
-})
+});
 
-export default ExpertSignupScreen
+export default StudentSignupScreen;
