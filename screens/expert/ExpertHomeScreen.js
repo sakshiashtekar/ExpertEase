@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
-    marginTop: 40,
+    marginTop: 15,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -162,8 +162,7 @@ const styles = StyleSheet.create({
     borderColor: '#1D3557',
     borderRadius: 25,
     paddingHorizontal: 15,
-    marginTop: 40,
-    backgroundColor: '#f0f4f8',
+    marginTop: 15,
   },
   searchIcon: {
     marginRight: 10,
