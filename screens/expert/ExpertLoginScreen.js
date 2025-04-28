@@ -82,7 +82,7 @@ const ExpertLoginScreen = ({ navigation }) => {
 
     try {
       // First logout to ensure a clean session
-      await logout()
+      // await logout()
 
       // Then prompt for login
       await promptAsync({ useProxy: true })
