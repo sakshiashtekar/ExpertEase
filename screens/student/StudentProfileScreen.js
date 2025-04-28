@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, BackHandler } from 'react-native';
 import { supabase } from '../supabase'; // adjust the path if needed
 
 const StudentProfileScreen = ({ navigation, route }) => {
@@ -13,6 +13,15 @@ const StudentProfileScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     fetchStudentDetails();
+
+    const backAction = () => {
+      navigation.navigate("StudentDrawer", { screen: "StudentHome" }); // Navigate to Home Screen
+      return true; // Prevent default back action
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove(); // Clean up the back handler when the component is unmounted
   }, []);
 
   const fetchStudentDetails = async () => {

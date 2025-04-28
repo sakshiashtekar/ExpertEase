@@ -40,7 +40,9 @@ const PaymentScreen = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false)
 
   const handleGoBack = () => {
-    navigation.goBack()
+    navigation.navigate("StudentDrawer", {
+      screen: "StudentHome",
+    });
   }
 
   // This would typically be a call to your backend to create a payment intent
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButtonText: {
-    fontSize: 25,
+    fontSize: 45,
     color: "#000",
     fontWeight: "bold",
   },

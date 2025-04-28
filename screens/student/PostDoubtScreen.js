@@ -1,73 +1,71 @@
-
-"use client"
-import React, { useState, useEffect } from 'react'; 
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';     
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../supabase'; // Ensure this path is correct for your project
 
 const PostDoubtScreen = () => {
-  const navigation = useNavigation()
-  const [image, setImage] = useState(null)
-  const [email, setEmail] = useState("")
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [isFormValid, setIsFormValid] = useState(false)
-
-  // Validate form
-  useEffect(() => {
-    setIsFormValid(email.trim() !== "" && title.trim() !== "" && description.trim() !== "")
-  }, [email, title, description])
-
+  const navigation = useNavigation();
+  const [image, setImage] = useState(null);
+  const [email, setEmail] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
   // Request media library permission
   useEffect(() => {
     const requestPermissions = async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission Required", "Sorry, we need camera roll permissions to make this work!")
+        Alert.alert("Permission Required", "Sorry, we need camera roll permissions to make this work!");
       }
-    }
-
-    requestPermissions()
-  }, [])
+    };
+    requestPermissions();
+  }, []);
 
   // Function to pick an image from the gallery
   const pickImage = async () => {
     try {
-      console.log("Opening image picker...")
+      console.log("Opening image picker...");
 
       const result = await ImagePicker.launchImageLibraryAsync({
-
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
-      })
+      });
 
-      console.log("Image picker result: ", result)
+      console.log("Image picker result: ", result);
 
       if (!result.canceled) {
-        setImage(result.assets[0].uri)
+        setImage(result.assets[0].uri);
       } else {
-        console.log("No image selected")
+        console.log("No image selected");
       }
     } catch (error) {
-      console.error("Error picking image:", error)
-
+      console.error("Error picking image:", error);
     }
-  }
+  };
 
+  // Handle back navigation
   const handleGoBack = () => {
-
-    navigation.navigate("StudentDrawer", { screen: "StudentHome" })
-  }
+    navigation.navigate("StudentDrawer", { screen: "StudentHome" });
+  };
 
   const handlePostDoubt = () => {
-    if (!isFormValid) {
-      Alert.alert("Missing Information", "Please fill in all required fields")
-      return
+    // Email validation regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    // Check email format before proceeding
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    // Check if title and description are filled
+    if (title.trim() === "" || description.trim() === "") {
+      Alert.alert("Missing Information", "Please fill in all required fields.");
+      return;
     }
 
     // Create doubt object to pass to payment screen
@@ -77,11 +75,23 @@ const PostDoubtScreen = () => {
       description,
       image,
       timestamp: new Date().toISOString(),
-    }
+    };
 
     // Navigate to payment screen with doubt data
-    navigation.navigate("PaymentScreen", { doubtData })
-  }
+    navigation.navigate("PaymentScreen", { doubtData });
+  };
+
+  // Override the back button press
+  useEffect(() => {
+    const backAction = () => {
+      navigation.navigate("StudentDrawer", { screen: "StudentHome" });
+      return true; // Prevent the default back action
+    };
+
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+
+    return () => backHandler.remove(); // Clean up the listener on component unmount
+  }, [navigation]);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -126,9 +136,8 @@ const PostDoubtScreen = () => {
         {image && <Image source={{ uri: image }} style={styles.uploadedImage} />}
 
         <TouchableOpacity
-          style={[styles.postButton, !isFormValid && styles.disabledButton]}
+          style={styles.postButton}
           onPress={handlePostDoubt}
-          disabled={!isFormValid}
         >
           <Text style={styles.postButtonText}>Proceed to Payment</Text>
         </TouchableOpacity>
@@ -138,9 +147,8 @@ const PostDoubtScreen = () => {
         </Text>
       </View>
     </ScrollView>
-  )
-}
-
+  );
+};
 
 const styles = StyleSheet.create({
   scrollContainer: {
@@ -159,11 +167,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButtonText: {
-
-    fontSize: 25,
+    fontSize: 45,
     color: "#000",
     fontWeight: "bold",
-
   },
   title: {
     fontSize: 25,
@@ -183,7 +189,6 @@ const styles = StyleSheet.create({
   },
   descriptionInput: {
     height: 200,
-
     textAlignVertical: "top",
     paddingTop: 15,
   },
@@ -214,9 +219,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  disabledButton: {
-    backgroundColor: "#A0AEC0",
-  },
   postButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
@@ -229,8 +231,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
+});
 
-})
-
-export default PostDoubtScreen
-
+export default PostDoubtScreen;

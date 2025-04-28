@@ -18,10 +18,10 @@ const StudentDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('StudentProfile')}>
         <Text style={styles.drawerItem}>Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('ChatbotScreen')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('StudentChatbot')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('Feedback')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('StudentFeedback')}>
         <Text style={styles.drawerItem}>Feedback</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
