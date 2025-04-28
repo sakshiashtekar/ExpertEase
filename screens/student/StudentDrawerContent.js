@@ -1,25 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import logo from '../../assets/expertease_logo.png'; 
+import logo from '../../assets/expertease_logo.png';
 
 const StudentDrawerContent = (props) => {
   return (
     <View style={styles.drawerContent}>
 
       <View style={styles.header}>
-      <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.heading}>ExpertEase</Text>
       </View>
-      
+
       <TouchableOpacity onPress={() => props.navigation.navigate('StudentHome')}>
         <Text style={styles.drawerItem}>Home</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('StudentProfile')}>
         <Text style={styles.drawerItem}>Profile</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('')}>
-        <Text style={styles.drawerItem}>History</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('ChatbotScreen')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
@@ -28,7 +25,7 @@ const StudentDrawerContent = (props) => {
         <Text style={styles.drawerItem}>Feedback</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
-      <View style={styles.logoutContainer}>
+        <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
           <Text style={styles.logout}>Logout</Text>
         </View>
@@ -50,7 +47,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   logo: {
-    width: 80, 
+    width: 80,
     height: 100,
     marginRight: 10,
   },
@@ -71,7 +68,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   logoutIcon: {
-    marginRight: 10,  
+    marginRight: 10,
   },
   logout: {
     fontSize: 18,

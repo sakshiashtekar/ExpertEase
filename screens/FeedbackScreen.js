@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native'; // Import navigation hook
+import { supabase } from '../screens/supabase'; // Ensure this path is correct for your project
 
 const FeedbackForm = () => {
   const [name, setName] = useState('');
@@ -18,13 +19,29 @@ const FeedbackForm = () => {
   const [rating, setRating] = useState(0); // Default 0 stars selected
   const navigation = useNavigation(); // Use navigation hook
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name || !email || !feedback || rating === 0) {
       Alert.alert('Please complete all fields and select a star rating.');
       return;
     }
 
-    // Show confirmation popup when feedback is submitted
+    const { data, error } = await supabase.from('feedback').insert([
+      {
+        user_name: name,
+        email: email,
+        feedback_description: feedback,
+        rating: parseInt(rating),
+      },
+    ]);
+
+    console.log("Supabase response:", { data, error }); // <-- ADD THIS
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      return;
+    }
+
     Alert.alert(
       'Feedback Submitted',
       'Thank you for your feedback!',
@@ -32,20 +49,18 @@ const FeedbackForm = () => {
         {
           text: 'OK',
           onPress: () => {
-            // Reset form fields after submission
             setName('');
             setEmail('');
             setFeedback('');
             setRating(0);
-
-            // Navigate back to the home screen
-            navigation.goBack(); // This will take the user to the previous screen (e.g., Home)
+            navigation.goBack();
           },
         },
       ],
       { cancelable: false }
     );
   };
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -108,7 +123,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: '600',
-    marginBottom: 20,
+    marginBottom: 40,
     textAlign: 'center',
   },
   input: {
@@ -136,15 +151,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   button: {
-    backgroundColor: '#3b82f6',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: "#1D3557",
+    paddingHorizontal: 70,
+    paddingVertical: 10,
+    borderRadius: 30,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "900",
+    textAlign: 'center',
   },
 });

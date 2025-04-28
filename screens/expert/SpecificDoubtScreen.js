@@ -9,7 +9,6 @@ import * as Linking from 'expo-linking';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Picker } from '@react-native-picker/picker';
 import * as MailComposer from 'expo-mail-composer';
 
 const SpecificDoubtScreen = ({ route }) => {
@@ -131,7 +130,7 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
 
             <TextInput
               placeholder="Meeting Title"
-              style={styles.input}
+              style={styles.dateInput}
               value={meetingTitle}
               onChangeText={setMeetingTitle}
             />
@@ -143,7 +142,6 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
               >
                 <TextInput
                   placeholder="Date (YYYY-MM-DD)"
-                  style={styles.input}
                   value={meetingDate}
                   editable={false} // Make it non-editable
                 />
@@ -167,7 +165,6 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
               >
                 <TextInput
                   placeholder="Time (HH:MM)"
-                  style={styles.input}
                   value={meetingTime}
                   editable={false}
                 />
@@ -209,22 +206,19 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dateInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
     height: 50,
-    borderColor: '#F1FAEE',
+    borderColor: "#F1FAEE",
     borderWidth: 1,
     marginBottom: 12,
+    paddingLeft: 8,
     borderRadius: 10,
-    backgroundColor: '#F1FAEE',
-    paddingHorizontal: 8,
+    backgroundColor: "#F1FAEE",
+    width: '100%',
   },
   calendarIcon: {
     position: 'absolute',
     right: 12,
-  },
-  input: {
-    flex: 1,
+    top: 10
   },
   container: {
     flex: 1,
@@ -232,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    marginTop: 35,
+    marginTop: 15,
     marginLeft: 20,
     borderRadius: 10,
   },
