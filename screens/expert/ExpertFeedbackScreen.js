@@ -1,29 +1,97 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';    
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  BackHandler,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native'; // Import navigation hook
+import { supabase } from '../supabase'; // Ensure this path is correct for your project
 
 const FeedbackForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [rating, setRating] = useState(0); // Default 0 stars selected
+  const navigation = useNavigation(); // Use navigation hook
 
-  const handleSubmit = () => {
-    if (!name || !email || !feedback) {
-      Alert.alert('All fields are required!');
+  const userType = 'expert'; // Can be 'expert' or 'student'
+
+  const handleSubmit = async () => {
+    if (!name || !email || !feedback || rating === 0) {
+      Alert.alert('Please complete all fields and select a star rating.');
       return;
     }
 
-    // You can handle the feedback submission here (API call, email, etc.)
-    Alert.alert('Thank you for your feedback!');
-    
-    // Reset the form
-    setName('');
-    setEmail('');
-    setFeedback('');
+    const { data, error } = await supabase.from('feedback').insert([{
+      user_name: name,
+      email: email,
+      feedback_description: feedback,
+      rating: parseInt(rating),
+    }]);
+
+    console.log("Supabase response:", { data, error }); // <-- ADD THIS
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      return;
+    }
+
+    Alert.alert(
+      'Feedback Submitted',
+      'Thank you for your feedback!',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setName('');
+            setEmail('');
+            setFeedback('');
+            setRating(0);
+            navigation.goBack();
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
+  // Handle back navigation on device back button
+  const handleBackButtonPress = () => {
+    // Navigate to StudentHome if userType is 'student'
+    if (userType === 'expert') {
+      navigation.navigate('ExpertDrawer', {
+        screen: 'ExpertHome', // Assuming the home screen is named 'ExpertHome' in the ExpertDrawer
+      });
+    }
+    return true; // Prevent default back action (e.g., exiting app)
+  };
+
+  useEffect(() => {
+    // Listen for the hardware back button press
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButtonPress);
+
+    // Clean up the event listener when the component is unmounted
+    return () => {
+      backHandler.remove();
+    };
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Feedback Form</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* Back Button in Top Left Corner */}
+      <TouchableOpacity style={styles.backButton} onPress={handleBackButtonPress}>
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
+      <View style={styles.header}>
+        <Text style={styles.heading}>Feedback Form</Text>
+      </View>
 
       <TextInput
         style={styles.input}
@@ -46,13 +114,27 @@ const FeedbackForm = () => {
         value={feedback}
         onChangeText={setFeedback}
         multiline={true}
-        numberOfLines={5}
+        numberOfLines={4}
       />
+
+      <Text style={styles.label}>Rate Us:</Text>
+      <View style={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <TouchableOpacity key={star} onPress={() => setRating(star)}>
+            <Ionicons
+              name={star <= rating ? 'star' : 'star-outline'}
+              size={36}
+              color="#FFD700"
+              style={styles.starIcon}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Submit Feedback</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -60,22 +142,35 @@ export default FeedbackForm;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+    flexGrow: 1,
     justifyContent: 'center',
   },
+  backButton: {
+    position: 'absolute',  // Ensures the button stays fixed in the top-left corner
+    top: 40,               // Adjust the distance from the top of the screen
+    left: 20,              // Adjust the distance from the left of the screen
+    zIndex: 10,            // Make sure the button is above other elements
+  },
+  backButtonText: {
+    fontSize: 45,
+    color: '#000',
+    fontWeight: 'bold',
+  },
   heading: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 20,
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 40,
     textAlign: 'center',
+    color: '#1D3557',
+    marginLeft: 80,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#bbb',
+    borderColor: '#ccc',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     marginBottom: 15,
     fontSize: 16,
   },
@@ -83,16 +178,33 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
+  label: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 10,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  starIcon: {
+    marginHorizontal: 5,
+  },
   button: {
-    backgroundColor: '#3b82f6',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: "#1D3557",
+    paddingHorizontal: 70,
+    paddingVertical: 10,
+    borderRadius: 30,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
 });

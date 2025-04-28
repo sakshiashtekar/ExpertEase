@@ -1,25 +1,18 @@
-
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Platform
+  View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Platform, BackHandler
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
-
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-
 import * as MailComposer from 'expo-mail-composer';
 
 const SpecificDoubtScreen = ({ route }) => {
-
-
-
   const { doubt } = route.params;
   const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingDate, setMeetingDate] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
@@ -29,32 +22,43 @@ const SpecificDoubtScreen = ({ route }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [customCharge, setCustomCharge] = useState('');
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        navigation.navigate('ExpertDrawer', { screen: 'ExpertHome' });
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation])
+  );
+
   const handleScheduleMeet = () => {
     console.log('Meeting scheduled for:', doubt.title);
     console.log('Charge:', selectedCharge || customCharge);
     console.log('Time:', selectedTime);
     setIsModalVisible(false);
-  
-    // Trigger email after 30 seconds
+
+    // Trigger email after 3 seconds
     setTimeout(() => {
       MailComposer.composeAsync({
         recipients: ['sakshiashtekar245@gmail.com'],
         subject: `Reminder: ${doubt.title}`,
         body: `This is a reminder for your meeting.\n\nTitle: ${doubt.title}\nCharge: ₹${selectedCharge || customCharge}\nTime: ${selectedTime}`,
       });
-      console.log("Email composer triggered after 30 seconds");
+      console.log("Email composer triggered after 3 seconds");
     }, 3000);
   };
-
 
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || new Date();
     setShowDatePicker(Platform.OS === 'ios');
-    
-    // Format the date as YYYY-MM-DD
     const formattedDate = currentDate.toISOString().split('T')[0];
     setMeetingDate(formattedDate);
   };
+
   const onTimeChange = (event, selectedTime) => {
     const currentTime = selectedTime || new Date();
     setShowTimePicker(Platform.OS === 'ios');
@@ -62,7 +66,6 @@ const SpecificDoubtScreen = ({ route }) => {
     const minutes = currentTime.getMinutes().toString().padStart(2, '0');
     setMeetingTime(`${hours}:${minutes}`);
   };
-  
 
   const handleOpenCalendar = () => {
     if (!meetingTitle || !meetingDate || !meetingTime) {
@@ -70,17 +73,17 @@ const SpecificDoubtScreen = ({ route }) => {
       return;
     }
 
-    const formattedDate = meetingDate.replace(/-/g, ''); // YYYYMMDD
-    const formattedTime = meetingTime.replace(/:/g, ''); // HHMMSS
+    const formattedDate = meetingDate.replace(/-/g, '');
+    const formattedTime = meetingTime.replace(/:/g, '');
     const startDateTime = `${formattedDate}T${formattedTime}00`;
-    const endDateTime = `${formattedDate}T${formattedTime + 10000}00`;
-    const timezone = "Asia/Kolkata"; 
+    const endDateTime = `${formattedDate}T${formattedTime}00`;
+    const timezone = "Asia/Kolkata";
     const guests = "someone@example.com,another@example.com";
 
-const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}&ctz=${timezone}&add=${guests}`;
-    // const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=&dates=${}/${endDateTime}`;
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingTitle)}&dates=${startDateTime}/${endDateTime}&ctz=${timezone}&add=${guests}`;
+
     Linking.openURL(calendarUrl);
-    console.log('Calendar URL:', calendarUrl); // Debugging line
+    console.log('Calendar URL:', calendarUrl);
     setIsModalVisible(false);
   };
 
@@ -90,7 +93,7 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
 
   return (
     <View style={styles.container}>
-      {/* Back Button only */}
+      {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
@@ -100,10 +103,6 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
       <Text style={styles.detail}>{doubt.title}</Text>
       <Text style={styles.Text}>Domain:</Text>
       <Text style={styles.detail}>{doubt.domain}</Text>
-      {/* <Text style={styles.Text}>Timeslot:</Text>
-      <Text style={styles.detail}>{doubt.timeslot}</Text>
-      <Text style={styles.Text}>Charges:</Text>
-      <Text style={styles.detail}>{doubt.charges}</Text> */}
       <Text style={styles.Text}>Description of the doubt:</Text>
       <Text style={styles.detail}>{doubt.description || 'No description available.'}</Text>
       <Text style={styles.Text}>Doubt Photo:</Text>
@@ -111,13 +110,14 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
       <Text style={styles.Text}>Email:</Text>
       <Text style={styles.detail}>{doubt.posted_by}</Text>
       <Text style={styles.Text}>Instruction:</Text>
-      <Text style = {styles.detail}>While scheduling the meeting, please use the following format for the Meeting Title: Doubt Title - Expert Name</Text>
+      <Text style={styles.detail}>While scheduling the meeting, please use the following format for the Meeting Title: Doubt Title - Expert Name</Text>
+
       <TouchableOpacity style={styles.button} onPress={() => setIsModalVisible(true)}>
         <Image source={require('../../assets/google_logo.png')} style={styles.logo} />
         <Text style={styles.buttonText}>Schedule a Meet</Text>
       </TouchableOpacity>
 
-      {/* Modal for entering meeting info */}
+      {/* Modal */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -136,18 +136,18 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
             />
 
             <View style={styles.dateInputContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dateInput}
                 onPress={() => setShowDatePicker(true)}
               >
                 <TextInput
                   placeholder="Date (YYYY-MM-DD)"
                   value={meetingDate}
-                  editable={false} // Make it non-editable
+                  editable={false}
                 />
                 <Ionicons name="calendar" size={24} color="#457B9D" style={styles.calendarIcon} />
               </TouchableOpacity>
-              
+
               {showDatePicker && (
                 <DateTimePicker
                   value={meetingDate ? new Date(meetingDate) : new Date()}
@@ -159,7 +159,7 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
             </View>
 
             <View style={styles.dateInputContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dateInput}
                 onPress={() => setShowTimePicker(true)}
               >
@@ -181,7 +181,6 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
               )}
             </View>
 
-
             <View style={styles.modalButtonRow}>
               <TouchableOpacity style={styles.modalButton} onPress={handleOpenCalendar}>
                 <View style={styles.modalButtonRowInner}>
@@ -202,8 +201,8 @@ const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE
 };
 
 const styles = StyleSheet.create({
-  dateInputContainer: {
-    width: '100%',
+  dateInputContainer: { 
+    width: '100%' 
   },
   dateInput: {
     height: 50,
@@ -215,45 +214,45 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1FAEE",
     width: '100%',
   },
-  calendarIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 10
+  calendarIcon: { 
+    position: 'absolute', 
+    right: 12, 
+    top: 10 
   },
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: '#FFFFFF' 
   },
-  backButton: {
-    marginTop: 15,
-    marginLeft: 20,
-    borderRadius: 10,
+  backButton: { 
+    marginTop: 15, 
+    marginLeft: 10, 
+    borderRadius: 10 
   },
-  backButtonText: {
-    fontSize: 45,
-    color: '#000',
-    fontWeight: 'bold',
+  backButtonText: { 
+    fontSize: 45, 
+    color: '#000', 
+    fontWeight: 'bold' 
   },
-  title: {
-    fontSize: 25,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#1D3557',
-    marginTop: 10,
+  title: { 
+    fontSize: 25, 
+    fontWeight: 'bold', 
+    marginBottom: 20, 
+    textAlign: 'center', 
+    color: '#1D3557', 
+    marginTop: 10 
   },
-  Text: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#457B9D',
-    marginBottom: 5,
-    marginLeft: 20,
+  Text: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#457B9D', 
+    marginBottom: 5, 
+    marginLeft: 20 
   },
-  detail: {
-    fontSize: 18,
-    marginBottom: 20,
-    marginLeft: 20,
+  detail: { 
+    fontSize: 18, 
+    marginBottom: 20, 
+    marginLeft: 20 
   },
   button: {
     flexDirection: 'row',
@@ -263,24 +262,23 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 50,
-    marginRight: 50,
+    marginHorizontal: 50,
   },
-  logo: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+  logo: { 
+    width: 20, 
+    height: 20, 
+    marginRight: 10 
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+  buttonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold'
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  modalContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#fff' 
   },
   modalContent: {
     backgroundColor: '#A8DADC',
@@ -289,19 +287,10 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 15,
-    paddingLeft: 10,
+  modalTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginBottom: 15 
   },
   modalButton: {
     backgroundColor: '#1D3557',
@@ -314,20 +303,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  modalButtonText: { 
+    color: 'white', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
   },
-  modalButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
+  modalButtonRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    width: '100%' 
   },
-  modalButtonRowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  modalButtonRowInner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
   },
 });
 

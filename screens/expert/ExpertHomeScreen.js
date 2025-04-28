@@ -125,7 +125,7 @@ const ExpertHomeScreen = () => {
       {/* Chatbot logo at the bottom right */}
       <TouchableOpacity
         style={styles.chatbotLogo}
-        onPress={() => navigation.navigate('Chatbot')}
+        onPress={() => navigation.navigate('ExpertChatbot')}
       >
         <Image
           source={require('../../assets/chatbot-logo.png')}

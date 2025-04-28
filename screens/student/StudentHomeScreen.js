@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Modal } from 'react-native';
+import React, { useEffect, useState } from 'react';  
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Modal, BackHandler } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../supabase';
@@ -11,9 +11,19 @@ const StudentHomeScreen = () => {
   const [filteredExperts, setFilteredExperts] = useState([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState('');
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
 
   useEffect(() => {
     fetchExperts();
+
+    const backAction = () => {
+      setShowExitPrompt(true);  // Show the exit prompt when back is pressed
+      return true;  // Prevent default back action
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();  // Clean up the back handler when component is unmounted
   }, []);
 
   const fetchExperts = async () => {
@@ -55,18 +65,22 @@ const StudentHomeScreen = () => {
 
   const uniqueDomains = ['All Domains', ...new Set(experts.map(expert => expert.domain_expertise))];
 
+  const handleExit = () => {
+    BackHandler.exitApp();  // Exit the app if confirmed
+  };
+
+  const handleCancelExit = () => {
+    setShowExitPrompt(false);  // Close the exit prompt and return to home screen
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header with menu and domain filter */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
           <Icon name="bars" size={28} color="#E63946" />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.searchContainer}
-          onPress={() => setIsDropdownVisible(true)}
-        >
+        <TouchableOpacity style={styles.searchContainer} onPress={() => setIsDropdownVisible(true)}>
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
           <Text style={styles.searchInput}>
             {selectedDomain ? selectedDomain : 'Select Domain'}
@@ -77,25 +91,14 @@ const StudentHomeScreen = () => {
       <Text style={styles.title}>Our Experts</Text>
 
       {/* Domain dropdown modal */}
-      <Modal
-        visible={isDropdownVisible}
-        transparent={true}
-        animationType="fade"
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPressOut={() => setIsDropdownVisible(false)}
-        >
+      <Modal visible={isDropdownVisible} transparent={true} animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setIsDropdownVisible(false)}>
           <View style={styles.dropdown}>
             <FlatList
               data={uniqueDomains}
               keyExtractor={(item, index) => index.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => handleDomainSelect(item)}
-                >
+                <TouchableOpacity style={styles.dropdownItem} onPress={() => handleDomainSelect(item)}>
                   <Text style={styles.dropdownText}>{item}</Text>
                 </TouchableOpacity>
               )}
@@ -116,15 +119,28 @@ const StudentHomeScreen = () => {
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.chatbotLogo}
-        onPress={() => navigation.navigate('Chatbot')}
-      >
-        <Image
-          source={require('../../assets/chatbot-logo.png')}
-          style={styles.chatbotImage}
-        />
+      <TouchableOpacity style={styles.chatbotLogo} onPress={() => navigation.navigate('StudentChatbot')}>
+        <Image source={require('../../assets/chatbot-logo.png')} style={styles.chatbotImage} />
       </TouchableOpacity>
+
+      {/* Exit confirmation modal */}
+      {showExitPrompt && (
+        <Modal transparent={true} animationType="fade" visible={showExitPrompt}>
+          <View style={styles.exitModal}>
+            <View style={styles.exitModalContent}>
+              <Text style={styles.exitText}>Are you sure you want to exit?</Text>
+              <View style={styles.exitButtons}>
+                <TouchableOpacity onPress={handleExit} style={styles.exitButton}>
+                  <Text style={styles.exitButtonText}>Exit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleCancelExit} style={styles.exitButton}>
+                  <Text style={styles.exitButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -132,7 +148,7 @@ const StudentHomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: 30,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
@@ -143,7 +159,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginRight: 8,
-    marginTop: 40,
+    marginTop: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -154,7 +170,7 @@ const styles = StyleSheet.create({
     borderColor: '#1D3557',
     borderRadius: 25,
     paddingHorizontal: 15,
-    marginTop: 40,
+    marginTop: 20,
     backgroundColor: '#f0f4f8',
   },
   searchIcon: {
@@ -251,6 +267,40 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#ddd',
     marginHorizontal: 10,
+  },
+  exitModal: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  exitModalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  exitText: {
+    fontSize: 18,
+    color: '#1D3557',
+    marginBottom: 20,
+  },
+  exitButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  exitButton: {
+    backgroundColor: '#1D3557',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+  },
+  exitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
