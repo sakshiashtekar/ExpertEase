@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable, ActivityIndicator } from "react-native"
 import { RadioButton } from "react-native-paper"
 import { useAuth } from "../authContext"
-import { useAuthRequest, promptAsync as authPromptAsync } from "../authService"
+import { useAuthRequest, setUserRole, promptAsync as authPromptAsync } from "../authService"
 
 const WelcomeScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false)
@@ -76,7 +76,7 @@ const WelcomeScreen = ({ navigation }) => {
       return;
     }
     
-    setLocalIsLoading(true)
+    // setLocalIsLoading(true)
     
     try {
       if (!request) {
