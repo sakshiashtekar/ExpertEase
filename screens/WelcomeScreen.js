@@ -4,11 +4,14 @@ import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable, ActivityIndicator } from "react-native"
 import { RadioButton } from "react-native-paper"
 import { useAuth } from "../authContext"
+import { useAuthRequest, promptAsync as authPromptAsync } from "../authService"
 
 const WelcomeScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [selectedOption, setSelectedOption] = useState(null)
   const { isAuthenticated, isLoading, userRole } = useAuth()
+  const [request, response, promptAsync] = useAuthRequest()
+  const [localIsLoading, setLocalIsLoading] = useState(false)
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -28,18 +31,78 @@ const WelcomeScreen = ({ navigation }) => {
     }
   }, [isAuthenticated, userRole, navigation])
 
-  const handleNavigation = () => {
-    if (selectedOption === "Student") {
-      navigation.navigate("StudentSignUp")
-    } else if (selectedOption === "Expert") {
-      navigation.navigate("ExpertSignUp")
+  useEffect(() => {
+    if (response) {
+      console.log("Auth response type:", response.type)
+
+      if (response.type === "success") {
+        const { code } = response.params
+        handleAuthCode(code)
+      } else if (response.type === "error") {
+        setLocalIsLoading(false)
+        console.error("Auth error:", response.error)
+      } else {
+        setLocalIsLoading(false)
+      }
     }
-    setModalVisible(false)
+  }, [response])
+
+  const handleAuthCode = async (code) => {
+    try {
+      // Based on the selected option, set the user role and navigate accordingly
+      if (selectedOption === "Student") {
+        await setUserRole("student")
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "StudentDrawer" }],
+        })
+      } else if (selectedOption === "Expert") {
+        await setUserRole("expert")
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "ExpertDrawer" }],
+        })
+      }
+      setLocalIsLoading(false)
+    } catch (error) {
+      setLocalIsLoading(false)
+      console.error("Error processing auth code:", error)
+    }
   }
 
 
+  const handleNavigation = async () => {
+    if (!selectedOption) {
+      return;
+    }
+    
+    setLocalIsLoading(true)
+    
+    try {
+      if (!request) {
+        console.error("Auth request is not ready")
+        setLocalIsLoading(false)
+        return
+      }
+      
+      // Directly prompt for Auth0 login
+      await promptAsync({ useProxy: true })
+      // Result will be handled in the useEffect with the response
+    } catch (error) {
+      setLocalIsLoading(false)
+      console.error("Auth error:", error)
+    }
+    
+    setModalVisible(false)
+  }
+
   return (
     <View style={styles.container}>
+      {(isLoading || localIsLoading) && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1D3557" />
+        </View>
+      )}
       <Text style={styles.title}>Welcome!</Text>
       <Image source={require("../assets/expertease_logo.png")} style={styles.image} />
 

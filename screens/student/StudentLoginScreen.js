@@ -56,7 +56,6 @@ const StudentLoginScreen = ({ navigation }) => {
             {
               text: "OK",
               onPress: () => {
-                // Navigate to ExpertDrawer which contains ExpertHome
                 navigation.reset({
                   index: 0,
                   routes: [{ name: 'StudentDrawer' }],
@@ -85,7 +84,6 @@ const StudentLoginScreen = ({ navigation }) => {
     }
   }, [response, navigation]);
 
-  // Handle Google sign-in with better error handling
   const handleGoogleLogin = async () => {
     console.log("Starting Google Sign-In process");
     
@@ -142,7 +140,6 @@ const StudentLoginScreen = ({ navigation }) => {
           {
             text: "OK",
             onPress: () => {
-              // Navigate to ExpertDrawer which contains ExpertHome
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'StudentDrawer' }],
