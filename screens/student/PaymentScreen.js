@@ -53,7 +53,9 @@ const PaymentScreen = () => {
   const [cvcError, setCvcError] = useState("")
 
   const handleGoBack = () => {
-    navigation.goBack()
+    navigation.navigate("StudentDrawer", {
+      screen: "StudentHome",
+    });
   }
 
   // Format card number as user types (add spaces every 4 digits)
@@ -436,7 +438,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButtonText: {
-    fontSize: 25,
+    fontSize: 45,
     color: "#000",
     fontWeight: "bold",
   },

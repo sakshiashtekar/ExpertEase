@@ -59,14 +59,14 @@ const ExpertDrawerContent = (props) => {
       <TouchableOpacity onPress={() => props.navigation.navigate('ExpertProfile')}>
         <Text style={styles.drawerItem}>Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('Chatbot')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('ExpertChatbot')}>
         <Text style={styles.drawerItem}>Chatbot</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => props.navigation.navigate('Feedback')}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('ExpertFeedback')}>
         <Text style={styles.drawerItem}>Feedback</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={handleLogout }>
-      <View style={styles.logoutContainer}>
+      <TouchableOpacity onPress={() => props.navigation.navigate('Welcome')}>
+        <View style={styles.logoutContainer}>
           <Icon name="logout" size={24} color="#457B9D" style={styles.logoutIcon} />
           <Text style={styles.logout}>Logout</Text>
         </View>
