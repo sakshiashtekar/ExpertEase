@@ -22,7 +22,7 @@ import ExpertFeedbackScreen from './screens/expert/ExpertFeedbackScreen';
 import ExpertChatbotScreen from './screens/expert/ExpertChatbotScreen';
 import StudentFeedbackScreen from './screens/student/StudentFeedbackScreen';
 import StudentChatbotScreen from './screens/student/StudentChatbotScreen';
-
+import { StripeProvider} from "@stripe/stripe-react-native"
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 
@@ -44,8 +44,10 @@ const StudentDrawer = () => (
   </Drawer.Navigator>
 );
 
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51RCxbuK6hULRCRrGj5VzOztFNlG5EO8h4KV5tHaQYAoRfIUfRUsaQoqiEMVM7B6vBsaiHpdTJR9i55bHOY4vNoei007iAVnDeW"
 export default function App() {
   return (
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
     <DatabaseProvider>
       <NavigationContainer>
         <Drawer.Navigator initialRouteName="Welcome">
@@ -64,5 +66,6 @@ export default function App() {
         </Drawer.Navigator>
       </NavigationContainer>
     </DatabaseProvider>
+    </StripeProvider>
   );
 }
