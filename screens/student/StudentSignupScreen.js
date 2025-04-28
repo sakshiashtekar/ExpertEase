@@ -42,15 +42,15 @@ const StudentSignupScreen = ({ navigation }) => {
       const result = await exchangeCodeForToken(code, request)
 
       if (result.success) {
-        // Set user role as Expert
-        await setUserRole("expert")
+        
+        await setUserRole("student")
 
         setIsLoading(false)
         Alert.alert("Signup Success", "You've successfully signed up with Google", [
           {
             text: "OK",
             onPress: () => {
-              // Navigate to ExpertDrawer which contains ExpertHome
+              
               navigation.reset({
                 index: 0,
                 routes: [{ name: "StudentDrawer" }],
@@ -112,7 +112,7 @@ const StudentSignupScreen = ({ navigation }) => {
       {
         text: "OK",
         onPress: () => {
-          // Navigate to ExpertDrawer which contains ExpertHome
+          
           navigation.reset({
             index: 0,
             routes: [{ name: "StudentDrawer" }],
