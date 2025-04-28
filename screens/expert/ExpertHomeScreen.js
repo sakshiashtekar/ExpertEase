@@ -194,6 +194,19 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: '#1D3557',
   },
+
+  logoutButton: {
+    backgroundColor: '#E63946',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+
   chatbotLogo: {
     position: 'absolute',
     bottom: 20,
