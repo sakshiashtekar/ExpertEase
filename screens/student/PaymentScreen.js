@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/FontAwesome"
-import { StripeProvider, CardField, useStripe } from "@stripe/stripe-react-native"
+import { StripeProvider, useStripe } from "@stripe/stripe-react-native"
 import { useDatabase } from "../../context/DatabaseContext"
 
 // You would replace this with your actual Stripe publishable key
-const STRIPE_PUBLISHABLE_KEY = "pk_test_your_publishable_key_here"
+const STRIPE_PUBLISHABLE_KEY = "stripe-1234"
 
 // Payment options with different tiers
 const PAYMENT_OPTIONS = [
@@ -32,31 +32,181 @@ const PaymentScreen = () => {
   const route = useRoute()
   const { doubtData } = route.params
   const { addNewDoubt } = useDatabase()
-  const { initPaymentSheet, presentPaymentSheet, createPaymentMethod } = useStripe()
+  const { createPaymentMethod } = useStripe()
 
   const [selectedOption, setSelectedOption] = useState(PAYMENT_OPTIONS[0])
-  const [cardDetails, setCardDetails] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [validating, setValidating] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [cardValidated, setCardValidated] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState(null)
+
+  // Manual card input states
+  const [cardNumber, setCardNumber] = useState("")
+  const [expiryDate, setExpiryDate] = useState("")
+  const [cvc, setCvc] = useState("")
+  const [postalCode, setPostalCode] = useState("")
+
+  // Validation states
+  const [cardNumberError, setCardNumberError] = useState("")
+  const [expiryDateError, setExpiryDateError] = useState("")
+  const [cvcError, setCvcError] = useState("")
 
   const handleGoBack = () => {
     navigation.goBack()
   }
 
-  // This would typically be a call to your backend to create a payment intent
-  const fetchPaymentIntentClientSecret = async (amount) => {
-    // Simulate API call to your backend
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Your backend would create a PaymentIntent and return the client secret
-        resolve({ clientSecret: "mock_client_secret_from_your_backend" })
-      }, 1000)
-    })
+  // Format card number as user types (add spaces every 4 digits)
+  const formatCardNumber = (text) => {
+    // Remove all non-digits
+    const cleaned = text.replace(/\D/g, "")
+    // Add a space after every 4 digits
+    const formatted = cleaned.replace(/(\d{4})(?=\d)/g, "$1 ")
+    // Limit to 16 digits (19 chars with spaces)
+    return formatted.slice(0, 19)
+  }
+
+  // Format expiry date as MM/YY
+  const formatExpiryDate = (text) => {
+    // Remove all non-digits
+    const cleaned = text.replace(/\D/g, "")
+    // Format as MM/YY
+    if (cleaned.length > 2) {
+      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`
+    }
+    return cleaned
+  }
+
+  // Validate card number (basic Luhn algorithm check)
+  const validateCardNumber = () => {
+    const cleaned = cardNumber.replace(/\s/g, "")
+
+    // Check if it's a valid test card number
+    if (cleaned === "4242424242424242") {
+      setCardNumberError("")
+      return true
+    }
+
+    // Basic length check
+    if (cleaned.length !== 16) {
+      setCardNumberError("Card number must be 16 digits")
+      return false
+    }
+
+    setCardNumberError("")
+    return true
+  }
+
+  // Validate expiry date
+  const validateExpiryDate = () => {
+    if (!expiryDate.includes("/")) {
+      setExpiryDateError("Invalid format")
+      return false
+    }
+
+    const [month, year] = expiryDate.split("/")
+    const currentYear = new Date().getFullYear() % 100 // Get last 2 digits of year
+    const currentMonth = new Date().getMonth() + 1 // Months are 0-indexed
+
+    if (Number.parseInt(month) < 1 || Number.parseInt(month) > 12) {
+      setExpiryDateError("Invalid month")
+      return false
+    }
+
+    if (
+      Number.parseInt(year) < currentYear ||
+      (Number.parseInt(year) === currentYear && Number.parseInt(month) < currentMonth)
+    ) {
+      setExpiryDateError("Card expired")
+      return false
+    }
+
+    setExpiryDateError("")
+    return true
+  }
+
+  // Validate CVC
+  const validateCvc = () => {
+    if (cvc.length < 3) {
+      setCvcError("CVC must be at least 3 digits")
+      return false
+    }
+
+    setCvcError("")
+    return true
+  }
+
+  // Validate all card details
+  const validateAllCardDetails = () => {
+    const isCardNumberValid = validateCardNumber()
+    const isExpiryDateValid = validateExpiryDate()
+    const isCvcValid = validateCvc()
+
+    return isCardNumberValid && isExpiryDateValid && isCvcValid
+  }
+
+  // Validate the card details
+  const validateCard = async () => {
+    console.log("Validating card details...")
+
+    if (!validateAllCardDetails()) {
+      Alert.alert("Error", "Please correct the card details")
+      return
+    }
+
+    setValidating(true)
+
+    try {
+      // Parse expiry date
+      const [expiryMonth, expiryYear] = expiryDate.split("/")
+
+      // Create a payment method to validate the card
+      console.log("Creating payment method...")
+      const { paymentMethod: method, error } = await createPaymentMethod({
+        type: "Card",
+        card: {
+          number: cardNumber.replace(/\s/g, ""),
+          expMonth: Number.parseInt(expiryMonth),
+          expYear: Number.parseInt(expiryYear) + 2000, // Convert YY to YYYY
+          cvc: cvc,
+        },
+        billingDetails: {
+          email: doubtData.email,
+          postalCode: postalCode,
+        },
+      })
+
+      if (error) {
+        console.log("Error creating payment method:", error)
+        throw new Error(error.message)
+      }
+
+      if (!method) {
+        console.log("No payment method returned")
+        throw new Error("Failed to create payment method")
+      }
+
+      console.log("Payment method created successfully:", method.id)
+
+      // If we get here, the card is valid
+      setCardValidated(true)
+      setPaymentMethod(method)
+
+      Alert.alert("Card Validated", `Card ending in ${method.card.last4} is valid. You can now proceed with payment.`)
+    } catch (error) {
+      console.error("Card validation error:", error)
+      Alert.alert(
+        "Validation Failed",
+        error.message || "There was an error validating your card. Please check the details and try again.",
+      )
+    } finally {
+      setValidating(false)
+    }
   }
 
   const handlePayment = async () => {
-    if (!cardDetails?.complete) {
-      Alert.alert("Error", "Please enter complete card details")
+    if (!cardValidated || !paymentMethod) {
+      Alert.alert("Error", "Please validate your card details first")
       return
     }
 
@@ -65,18 +215,6 @@ const PaymentScreen = () => {
     try {
       // Get the amount to charge
       const amountToCharge = selectedOption.amount
-
-      // Create a payment method
-      const { paymentMethod, error } = await createPaymentMethod({
-        type: "Card",
-        billingDetails: {
-          email: doubtData.email,
-        },
-      })
-
-      if (error) {
-        throw new Error(error.message)
-      }
 
       // In a real implementation, you would:
       // 1. Send the payment method ID to your server
@@ -127,7 +265,7 @@ const PaymentScreen = () => {
 
   const renderPaymentOption = (option) => {
     const isSelected = selectedOption.id === option.id
-    
+
     return (
       <TouchableOpacity
         key={option.id}
@@ -189,21 +327,82 @@ const PaymentScreen = () => {
           <Text style={styles.sectionTitle}>Card Details</Text>
 
           <View style={styles.cardContainer}>
-            <CardField
-              postalCodeEnabled={true}
-              placeholder={{
-                number: "4242 4242 4242 4242",
-              }}
-              cardStyle={styles.cardStyle}
-              style={styles.cardField}
-              onCardChange={setCardDetails}
+            <Text style={styles.inputLabel}>Card Number</Text>
+            <TextInput
+              style={[styles.input, cardNumberError ? styles.inputError : null]}
+              placeholder="4242 4242 4242 4242"
+              value={cardNumber}
+              onChangeText={(text) => setCardNumber(formatCardNumber(text))}
+              keyboardType="numeric"
+              maxLength={19}
+              onBlur={validateCardNumber}
             />
+            {cardNumberError ? <Text style={styles.errorText}>{cardNumberError}</Text> : null}
+
+            <View style={styles.rowContainer}>
+              <View style={styles.halfInput}>
+                <Text style={styles.inputLabel}>Expiry Date</Text>
+                <TextInput
+                  style={[styles.input, expiryDateError ? styles.inputError : null]}
+                  placeholder="MM/YY"
+                  value={expiryDate}
+                  onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
+                  keyboardType="numeric"
+                  maxLength={5}
+                  onBlur={validateExpiryDate}
+                />
+                {expiryDateError ? <Text style={styles.errorText}>{expiryDateError}</Text> : null}
+              </View>
+
+              <View style={styles.halfInput}>
+                <Text style={styles.inputLabel}>CVC</Text>
+                <TextInput
+                  style={[styles.input, cvcError ? styles.inputError : null]}
+                  placeholder="123"
+                  value={cvc}
+                  onChangeText={setCvc}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  onBlur={validateCvc}
+                />
+                {cvcError ? <Text style={styles.errorText}>{cvcError}</Text> : null}
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>Postal Code (Optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="12345"
+              value={postalCode}
+              onChangeText={setPostalCode}
+              keyboardType="numeric"
+              maxLength={10}
+            />
+
+            {cardValidated && (
+              <View style={styles.validatedBadge}>
+                <Icon name="check-circle" size={16} color="#4CAF50" />
+                <Text style={styles.validatedText}>Card Validated</Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity
-            style={[styles.payButton, (!cardDetails?.complete || loading) && styles.disabledButton]}
+            style={[styles.validateButton, validating && styles.disabledButton]}
+            onPress={validateCard}
+            disabled={validating || cardValidated}
+          >
+            {validating ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.validateButtonText}>{cardValidated ? "Card Validated ✓" : "Validate Card"}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.payButton, (!cardValidated || loading) && styles.disabledButton]}
             onPress={handlePayment}
-            disabled={!cardDetails?.complete || loading}
+            disabled={!cardValidated || loading}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -321,24 +520,57 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
+    position: "relative",
   },
-  cardStyle: {
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1D3557",
+    marginBottom: 5,
+  },
+  input: {
     backgroundColor: "#FFFFFF",
-    textColor: "#1D3557",
-    borderRadius: 10,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
     fontSize: 16,
   },
-  cardField: {
-    width: "100%",
-    height: 50,
-    marginVertical: 10,
+  inputError: {
+    borderColor: "#E53935",
+  },
+  errorText: {
+    color: "#E53935",
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  rowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  halfInput: {
+    width: "48%",
+  },
+  validateButton: {
+    backgroundColor: "#457B9D",
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  validateButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   payButton: {
     backgroundColor: "#1D3557",
     paddingVertical: 15,
     borderRadius: 30,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 5,
     marginBottom: 10,
   },
   disabledButton: {
@@ -377,6 +609,23 @@ const styles = StyleSheet.create({
   },
   successSpinner: {
     marginTop: 20,
+  },
+  validatedBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#E8F5E9",
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  validatedText: {
+    color: "#4CAF50",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginLeft: 5,
   },
 })
 
