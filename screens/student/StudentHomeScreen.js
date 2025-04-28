@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { supabase } from '../supabase'; // make sure the path is correct
+import { useNavigation } from '@react-navigation/native';
+import { supabase } from '../supabase';
 
-const StudentHomeScreen = ({ navigation }) => {
+const StudentHomeScreen = () => {
+  const navigation = useNavigation();
+
   const [experts, setExperts] = useState([]);
+  const [filteredExperts, setFilteredExperts] = useState([]);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState('');
+
+  useEffect(() => {
+    fetchExperts();
+  }, []);
 
   const fetchExperts = async () => {
     const { data, error } = await supabase.from('experts').select('*');
@@ -12,12 +22,21 @@ const StudentHomeScreen = ({ navigation }) => {
       console.error('Error fetching experts:', error);
     } else {
       setExperts(data);
+      setFilteredExperts(data);
     }
   };
 
-  useEffect(() => {
-    fetchExperts();
-  }, []);
+  const handleDomainSelect = (domain) => {
+    setSelectedDomain(domain === 'All Domains' ? '' : domain);
+    setIsDropdownVisible(false);
+
+    if (domain === 'All Domains') {
+      setFilteredExperts(experts);
+    } else {
+      const filtered = experts.filter(expert => expert.domain_expertise.toLowerCase() === domain.toLowerCase());
+      setFilteredExperts(filtered);
+    }
+  };
 
   const renderExpertCard = ({ item, index }) => {
     const cardBackgroundColor = index % 2 === 0 ? '#A8DADC' : '#F1FAEE';
@@ -25,36 +44,71 @@ const StudentHomeScreen = ({ navigation }) => {
     return (
       <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
         <Image style={styles.avatar} source={require('../../assets/profile_logo.png')} />
-        <View>
-          <Text style={styles.cardText}>{item.name}</Text>
-          <Text style={styles.cardText}>{item.domain_expertise}</Text>
-          <Text style={styles.cardText}>{item.hourly_rate}</Text>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardText}>Name: {item.name}</Text>
+          <Text style={styles.cardText}>Expertise: {item.domain_expertise}</Text>
+          <Text style={styles.cardText}>Hourly Rate: ₹{item.hourly_rate}</Text>
         </View>
       </View>
     );
   };
 
+  const uniqueDomains = ['All Domains', ...new Set(experts.map(expert => expert.domain_expertise))];
+
   return (
     <View style={styles.container}>
+      {/* Header with menu and domain filter */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
-          <Icon name="bars" size={38} color="#E63946" />
+          <Icon name="bars" size={28} color="#E63946" />
         </TouchableOpacity>
-        <View style={styles.searchContainer}>
+
+        <TouchableOpacity
+          style={styles.searchContainer}
+          onPress={() => setIsDropdownVisible(true)}
+        >
           <Icon name="search" size={20} color="#1D3557" style={styles.searchIcon} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search experts" 
-          />
-        </View>
+          <Text style={styles.searchInput}>
+            {selectedDomain ? selectedDomain : 'Select Domain'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.title}>Our Experts</Text>
 
+      {/* Domain dropdown modal */}
+      <Modal
+        visible={isDropdownVisible}
+        transparent={true}
+        animationType="fade"
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPressOut={() => setIsDropdownVisible(false)}
+        >
+          <View style={styles.dropdown}>
+            <FlatList
+              data={uniqueDomains}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleDomainSelect(item)}
+                >
+                  <Text style={styles.dropdownText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <FlatList
-        data={experts} // ✅ using fetched data
+        data={filteredExperts}
         renderItem={renderExpertCard}
-        keyExtractor={(item, index) => item.id?.toString() || index.toString()} // safer key
+        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         ListEmptyComponent={<Text>No experts available.</Text>}
       />
 
@@ -62,13 +116,12 @@ const StudentHomeScreen = ({ navigation }) => {
         <Text style={styles.postButtonText}>Post Doubt</Text>
       </TouchableOpacity>
 
-      {/* Chatbot logo at the bottom right */}
       <TouchableOpacity
         style={styles.chatbotLogo}
         onPress={() => navigation.navigate('Chatbot')}
       >
         <Image
-          source={require('../../assets/chatbot-logo.png')} // Replace with your logo path
+          source={require('../../assets/chatbot-logo.png')}
           style={styles.chatbotImage}
         />
       </TouchableOpacity>
@@ -79,7 +132,8 @@ const StudentHomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 40,
+    paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
   header: {
@@ -95,55 +149,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    height: 40,
+    height: 45,
     borderWidth: 2,
     borderColor: '#1D3557',
-    borderRadius: 20,
-    marginTop: 40,
+    borderRadius: 25,
     paddingHorizontal: 15,
+    marginTop: 40,
+    backgroundColor: '#f0f4f8',
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    borderWidth: 0,
-    paddingHorizontal: -5,
+    fontSize: 16,
+    color: '#1D3557',
   },
   title: {
-    fontSize: 25,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginVertical: 20,
     textAlign: 'center',
     color: '#1D3557',
   },
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
     padding: 16,
     marginBottom: 12,
-    borderRadius: 20,
-    marginTop: 10,
+    borderRadius: 16,
     elevation: 4,
+    backgroundColor: '#F1FAEE',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 20,
-    borderColor: '#1D3557',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
     borderWidth: 2,
+    borderColor: '#1D3557',
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   cardText: {
     fontSize: 16,
+    color: '#1D3557',
+    marginBottom: 4,
   },
   postButton: {
     backgroundColor: '#1D3557',
     paddingVertical: 12,
     borderRadius: 30,
     alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 20,
   },
   postButtonText: {
     color: '#FFFFFF',
@@ -152,9 +212,9 @@ const styles = StyleSheet.create({
   },
   chatbotLogo: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 20,
     right: 20,
-    backgroundColor: '#ffff', // Customize background color
+    backgroundColor: '#fff',
     padding: 10,
     borderRadius: 50,
     elevation: 5,
@@ -163,6 +223,34 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 50,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdown: {
+    backgroundColor: '#fff',
+    width: '80%',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    maxHeight: '50%',
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownText: {
+    fontSize: 18,
+    color: '#1D3557',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#ddd',
+    marginHorizontal: 10,
   },
 });
 
