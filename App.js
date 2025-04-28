@@ -56,7 +56,7 @@ export default function App() {
           <Drawer.Screen name="ExpertSignUp" component={ExpertSignupScreen} options={{ headerShown: false }} />
           <Drawer.Screen name="PostDoubt" component={PostDoubtScreen} options={{ headerShown: false }} />
           <Drawer.Screen name="SpecificDoubt" component={SpecificDoubtScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+          <Stack.Screen name="PaymentScreen" component={PaymentScreen} options={{ headerShown: false }} />
           {/* Drawer screens for Expert and Student */}
           <Drawer.Screen name="ExpertDrawer" component={ExpertDrawer} options={{ headerShown: false }} />
           <Drawer.Screen name="StudentDrawer" component={StudentDrawer} options={{ headerShown: false }} />
