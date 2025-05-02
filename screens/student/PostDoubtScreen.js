@@ -10,6 +10,7 @@ const PostDoubtScreen = () => {
   const [image, setImage] = useState(null);
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
+  const [domain, setDomain] = useState("");
   const [description, setDescription] = useState("");
 
   // Request media library permission
@@ -72,6 +73,7 @@ const PostDoubtScreen = () => {
     const doubtData = {
       email,
       title,
+      domain,
       description,
       image,
       timestamp: new Date().toISOString(),
@@ -117,6 +119,14 @@ const PostDoubtScreen = () => {
           placeholderTextColor="#7E7E7E"
           value={title}
           onChangeText={setTitle}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Domain"
+          placeholderTextColor="#7E7E7E"
+          value={domain}
+          onChangeText={setDomain}
         />
 
         <TextInput

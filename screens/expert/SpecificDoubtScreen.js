@@ -108,7 +108,7 @@ const SpecificDoubtScreen = ({ route }) => {
       <Text style={styles.Text}>Doubt Photo:</Text>
       <Text style={styles.detail}>{doubt.doubt_photo}</Text>
       <Text style={styles.Text}>Email:</Text>
-      <Text style={styles.detail}>{doubt.posted_by}</Text>
+      <Text style={styles.detail}>{doubt.email}</Text>
       <Text style={styles.Text}>Instruction:</Text>
       <Text style={styles.detail}>While scheduling the meeting, please use the following format for the Meeting Title: Doubt Title - Expert Name</Text>
 

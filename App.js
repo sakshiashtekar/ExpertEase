@@ -44,7 +44,7 @@ const StudentDrawer = () => (
   </Drawer.Navigator>
 );
 
-const STRIPE_PUBLISHABLE_KEY = "pk_test_51RCxbuK6hULRCRrGj5VzOztFNlG5EO8h4KV5tHaQYAoRfIUfRUsaQoqiEMVM7B6vBsaiHpdTJR9i55bHOY4vNoei007iAVnDeW"
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51RK14HPmwBwI5GdfmGsHvOPmTZ23KAAsx4t8gMqf9fm1aifz85wnZ1RY8sbBZJCEBF9nBKoYQddKSOHUoYIQOWcl00nN9kiBaF"
 export default function App() {
   return (
     <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>

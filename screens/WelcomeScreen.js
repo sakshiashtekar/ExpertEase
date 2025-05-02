@@ -9,7 +9,7 @@ import { useAuthRequest, setUserRole, promptAsync as authPromptAsync } from "../
 const WelcomeScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [selectedOption, setSelectedOption] = useState(null)
-  const { isAuthenticated, isLoading, userRole } = useAuth()
+  const { isAuthenticated, userRole } = useAuth()
   const [request, response, promptAsync] = useAuthRequest()
   const [localIsLoading, setLocalIsLoading] = useState(false)
 
@@ -98,7 +98,7 @@ const WelcomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {(isLoading || localIsLoading) && (
+      {(localIsLoading) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#1D3557" />
         </View>

@@ -56,7 +56,7 @@ const ExpertHomeScreen = () => {
           <View style={styles.cardContent}>
             <Text style={styles.cardText}>Doubt Title: {item.title}</Text>
             <Text style={styles.cardText}>Domain: {item.domain}</Text>
-            <Text style={styles.cardText}>Student Email: {item.posted_by}</Text>
+            <Text style={styles.cardText}>Student Email: {item.email}</Text>
           </View>
         </View>
       </TouchableOpacity>
